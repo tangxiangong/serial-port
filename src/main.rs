@@ -1,4 +1,4 @@
-use gpui::{AppContext, Application, WindowOptions};
+use gpui::{AppContext, WindowOptions};
 use gpui_component::Root;
 use serial_port::{app::controller::AppController, view::AppView};
 use std::sync::Arc;
@@ -10,7 +10,7 @@ fn main() {
         .expect("failed to build tokio runtime");
     let runtime_handle = Arc::new(runtime.handle().clone());
 
-    let app = Application::new();
+    let app = gpui_platform::application();
     app.run(move |cx| {
         gpui_component::init(cx);
         let runtime_handle = runtime_handle.clone();

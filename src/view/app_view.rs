@@ -38,7 +38,7 @@ impl AppView {
         let event_task = cx.spawn(async move |this, cx| {
             while let Some(event) = event_rx.recv().await {
                 if let Some(view) = this.upgrade() {
-                    let _ = view.update(cx, |view, cx| {
+                    view.update(cx, |view, cx| {
                         view.apply_event(event, cx);
                     });
                 } else {
