@@ -1,7 +1,5 @@
+use crate::core::{codecs::render_payload, records::RecordEntry};
 use serde::{Deserialize, Serialize};
-
-use crate::core::codecs::render_payload;
-use crate::core::records::RecordEntry;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct SearchResult {

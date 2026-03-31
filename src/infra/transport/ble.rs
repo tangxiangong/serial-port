@@ -1,23 +1,22 @@
-use std::pin::Pin;
-use std::time::Duration;
-
+use crate::{
+    core::records::{DeviceInfo, DeviceKind},
+    infra::transport::{AsyncTransport, TransportEvent, event_channel},
+    state::{BleDeviceDescriptor, BleProfile},
+};
 use anyhow::{Context, Result, anyhow};
 use async_trait::async_trait;
-use btleplug::api::{
-    Central, CharPropFlags, Characteristic, Manager as _, Peripheral as _, ScanFilter, WriteType,
-    bleuuid::uuid_from_u16,
+use btleplug::{
+    api::{
+        Central, CharPropFlags, Characteristic, Manager as _, Peripheral as _, ScanFilter,
+        WriteType, bleuuid::uuid_from_u16,
+    },
+    platform::{Adapter, Manager, Peripheral},
 };
-use btleplug::platform::{Adapter, Manager, Peripheral};
 use futures::{Stream, StreamExt};
-use tokio::sync::mpsc;
-use tokio::task::JoinHandle;
-use tokio::time::sleep;
+use std::{pin::Pin, time::Duration};
+use tokio::{sync::mpsc, task::JoinHandle, time::sleep};
 use tokio_stream::wrappers::UnboundedReceiverStream;
 use tokio_util::sync::CancellationToken;
-
-use crate::core::records::{DeviceInfo, DeviceKind};
-use crate::infra::transport::{AsyncTransport, TransportEvent, event_channel};
-use crate::state::{BleDeviceDescriptor, BleProfile};
 
 #[derive(Debug)]
 pub struct BleConnection {

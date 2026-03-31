@@ -1,8 +1,7 @@
-use std::sync::Arc;
-
 use gpui::{AppContext, Application, WindowOptions};
 use gpui_component::Root;
 use serial_port::{app::controller::AppController, view::AppView};
+use std::sync::Arc;
 
 fn main() {
     let runtime = tokio::runtime::Builder::new_multi_thread()

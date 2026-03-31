@@ -1,5 +1,4 @@
-use crate::core::checksum::ChecksumKind;
-use crate::core::records::DisplayMode;
+use crate::core::{checksum::ChecksumKind, records::DisplayMode};
 use anyhow::{Context, Result, anyhow};
 
 pub fn format_hex(bytes: &[u8]) -> String {

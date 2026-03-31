@@ -1,25 +1,25 @@
-use std::path::PathBuf;
-use std::pin::Pin;
-use std::time::Duration;
-
+use crate::{
+    core::records::{DeviceInfo, DeviceKind},
+    infra::transport::{AsyncTransport, TransportEvent, event_channel},
+    state::{SerialConfig, SerialPortDescriptor},
+};
 use anyhow::{Context, Result, anyhow};
 use async_trait::async_trait;
 use futures::Stream;
 use serde::Deserialize;
-use tokio::io::{AsyncReadExt, AsyncWriteExt, ReadHalf, WriteHalf};
-use tokio::sync::{Mutex, mpsc};
-use tokio::task::JoinHandle;
-use tokio::time::{Instant, sleep_until};
+use std::{path::PathBuf, pin::Pin, time::Duration};
+use tokio::{
+    io::{AsyncReadExt, AsyncWriteExt, ReadHalf, WriteHalf},
+    sync::{Mutex, mpsc},
+    task::JoinHandle,
+    time::{Instant, sleep_until},
+};
 use tokio_serial::{
     DataBits, FlowControl, Parity, SerialPortBuilderExt, SerialPortType, SerialStream, StopBits,
     UsbPortInfo, available_ports,
 };
 use tokio_stream::wrappers::UnboundedReceiverStream;
 use tokio_util::sync::CancellationToken;
-
-use crate::core::records::{DeviceInfo, DeviceKind};
-use crate::infra::transport::{AsyncTransport, TransportEvent, event_channel};
-use crate::state::{SerialConfig, SerialPortDescriptor};
 
 #[derive(Debug, Deserialize)]
 struct UsbDeviceEntry {

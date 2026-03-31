@@ -1,26 +1,24 @@
-use std::sync::Arc;
-use std::time::Duration;
-
+use crate::{
+    app::search_service::SearchService,
+    core::{
+        codecs::encode_payload,
+        records::{DeviceInfo, DisplayMode, QuickInputItem, RecordEntry, RecordKind, SessionMeta},
+        search::SearchResult,
+    },
+    infra::{
+        storage::SessionStore,
+        transport::{self, ActiveTransport, TransportEvent},
+    },
+    state::{
+        AppSettings, BleDeviceDescriptor, BootstrapData, ConnectionStatus, SerialConfig,
+        SerialPortDescriptor,
+    },
+};
 use anyhow::Result;
 use futures::StreamExt;
-use tokio::runtime::Handle;
-use tokio::sync::mpsc;
-use tokio::task::JoinHandle;
-use tokio::time::sleep;
+use std::{sync::Arc, time::Duration};
+use tokio::{runtime::Handle, sync::mpsc, task::JoinHandle, time::sleep};
 use tokio_util::sync::CancellationToken;
-
-use crate::app::search_service::SearchService;
-use crate::core::codecs::encode_payload;
-use crate::core::records::{
-    DeviceInfo, DisplayMode, QuickInputItem, RecordEntry, RecordKind, SessionMeta,
-};
-use crate::core::search::SearchResult;
-use crate::infra::storage::SessionStore;
-use crate::infra::transport::{self, ActiveTransport, TransportEvent};
-use crate::state::{
-    AppSettings, BleDeviceDescriptor, BootstrapData, ConnectionStatus, SerialConfig,
-    SerialPortDescriptor,
-};
 
 #[derive(Debug, Clone)]
 pub enum AppCommand {

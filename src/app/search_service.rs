@@ -1,5 +1,7 @@
-use crate::core::records::RecordEntry;
-use crate::core::search::{SearchIndex, SearchResult};
+use crate::core::{
+    records::RecordEntry,
+    search::{SearchIndex, SearchResult},
+};
 
 #[derive(Debug, Default)]
 pub struct SearchService {

@@ -1,11 +1,10 @@
+use crate::core::{
+    checksum::ChecksumKind,
+    records::{DeviceInfo, DisplayMode, QuickInputItem, RecordEntry, RecordKind, SessionMeta},
+    search::SearchResult,
+};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
-
-use crate::core::checksum::ChecksumKind;
-use crate::core::records::{
-    DeviceInfo, DisplayMode, QuickInputItem, RecordEntry, RecordKind, SessionMeta,
-};
-use crate::core::search::SearchResult;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum DeviceType {
