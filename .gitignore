@@ -1,2 +1,2 @@
-/target
-.serial-port-data
+node_modules
+dist
