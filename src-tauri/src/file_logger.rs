@@ -1,10 +1,11 @@
-use std::path::PathBuf;
-
 use anyhow::Result;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use tokio::fs::File;
-use tokio::io::{AsyncWriteExt, BufWriter};
+use std::path::PathBuf;
+use tokio::{
+    fs::File,
+    io::{AsyncWriteExt, BufWriter},
+};
 
 /// Data direction for logging.
 #[derive(Clone, Debug, Serialize, Deserialize)]

@@ -1,20 +1,32 @@
-use std::collections::HashMap;
-use std::sync::Arc;
-
 use anyhow::{Result, anyhow};
 use chrono::Utc;
+use ringbuf::traits::{Consumer, Producer, Split};
 use serde::Serialize;
+use std::{collections::HashMap, sync::Arc, time::Duration};
 use tauri::{AppHandle, Emitter};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::sync::Mutex;
-use tokio_serial::{DataBits, FlowControl, Parity, SerialPortBuilderExt, SerialPortType, StopBits};
+use tokio::{
+    io::{AsyncReadExt, AsyncWriteExt},
+    select,
+    sync::{
+        Mutex,
+        watch::{Sender, channel},
+    },
+    time::sleep,
+};
+use tokio_serial::{
+    DataBits, FlowControl, Parity, SerialPortBuilderExt, SerialPortType, SerialStream, StopBits,
+};
 
 pub mod hotplug;
-pub mod ring_buffer;
 pub mod types;
 
-use ring_buffer::RingBuffer;
 use types::{FlowControl as CfgFlowControl, Parity as CfgParity, PortInfo, SerialConfig};
+
+use crate::{
+    codec::{bytes_to_ascii_string, bytes_to_dec_string, bytes_to_hex_display},
+    file_logger::FileLogger,
+    stats::StatsCollector,
+};
 
 /// Payload emitted for each received serial frame.
 #[derive(Clone, Debug, Serialize)]
@@ -30,9 +42,8 @@ struct SerialFrameEvent {
 
 /// Internal state for a single open serial connection.
 struct SerialConnection {
-    config: SerialConfig,
-    stream: Arc<Mutex<tokio_serial::SerialStream>>,
-    cancel_token: tokio::sync::watch::Sender<bool>,
+    stream: Arc<Mutex<SerialStream>>,
+    cancel_token: Sender<bool>,
 }
 
 /// Manages multiple concurrent serial port connections.
@@ -99,11 +110,16 @@ impl SerialManager {
 
     /// Open a serial port and start a background read task that aggregates
     /// incoming bytes into frames using a 5 ms silence timeout.
+    ///
+    /// If a `StatsCollector` is provided, the read loop will call `record_rx`
+    /// for each emitted frame.
     pub async fn open_port(
         &self,
         port_id: String,
         path: String,
         config: SerialConfig,
+        stats: Option<Arc<StatsCollector>>,
+        file_loggers: Arc<Mutex<HashMap<String, FileLogger>>>,
     ) -> Result<()> {
         let mut conns = self.connections.lock().await;
         if conns.contains_key(&port_id) {
@@ -138,10 +154,9 @@ impl SerialManager {
             .map_err(|e| anyhow!("failed to open serial port '{}': {}", path, e))?;
 
         let stream = Arc::new(Mutex::new(stream));
-        let (cancel_tx, mut cancel_rx) = tokio::sync::watch::channel(false);
+        let (cancel_tx, mut cancel_rx) = channel(false);
 
         let connection = SerialConnection {
-            config,
             stream: Arc::clone(&stream),
             cancel_token: cancel_tx,
         };
@@ -152,11 +167,11 @@ impl SerialManager {
         let task_port_id = port_id.clone();
 
         tauri::async_runtime::spawn(async move {
-            let mut ring = RingBuffer::new(64 * 1024);
+            let (mut prod, mut cons) = ringbuf::HeapRb::<u8>::new(64 * 1024).split();
             let mut tmp = [0u8; 1024];
 
             loop {
-                tokio::select! {
+                select! {
                     _ = cancel_rx.changed() => break,
                     result = async {
                         let mut guard = stream.lock().await;
@@ -165,19 +180,29 @@ impl SerialManager {
                         match result {
                             Ok(0) => break, // EOF
                             Ok(n) => {
-                                ring.write(&tmp[..n]);
+                                prod.push_slice(&tmp[..n]);
                                 // Wait for 5 ms of silence to aggregate a frame
                                 loop {
-                                    tokio::select! {
-                                        _ = tokio::time::sleep(std::time::Duration::from_millis(5)) => {
+                                    select! {
+                                        _ = sleep(Duration::from_millis(5)) => {
                                             // Silence timeout — emit the frame
-                                            let data = ring.read_all();
+                                            let data: Vec<u8> = cons.pop_iter().collect();
                                             if !data.is_empty() {
+                                                if let Some(ref s) = stats {
+                                                    s.record_rx(data.len() as u64);
+                                                }
+                                                // Log to file if active
+                                                {
+                                                    let mut loggers = file_loggers.lock().await;
+                                                    if let Some(logger) = loggers.get_mut(&task_port_id) {
+                                                        let _ = logger.log_data(&crate::file_logger::DataDirection::Rx, &data).await;
+                                                    }
+                                                }
                                                 let event = SerialFrameEvent {
                                                     port_id: task_port_id.clone(),
-                                                    hex: crate::codec::bytes_to_hex_display(&data),
-                                                    ascii: crate::codec::bytes_to_ascii_string(&data),
-                                                    dec: crate::codec::bytes_to_dec_string(&data),
+                                                    hex: bytes_to_hex_display(&data),
+                                                    ascii: bytes_to_ascii_string(&data),
+                                                    dec: bytes_to_dec_string(&data),
                                                     raw: data,
                                                     timestamp: Utc::now().to_rfc3339(),
                                                 };
@@ -191,7 +216,7 @@ impl SerialManager {
                                         } => {
                                             match more {
                                                 Ok(0) => break,
-                                                Ok(n) => { ring.write(&tmp[..n]); }
+                                                Ok(n) => { prod.push_slice(&tmp[..n]); }
                                                 Err(_) => break,
                                             }
                                         }
@@ -256,10 +281,7 @@ impl SerialManager {
     }
 
     /// Get a clone of the stream Arc for a given port. Used by the bridge module.
-    pub async fn get_stream(
-        &self,
-        port_id: &str,
-    ) -> Result<Arc<Mutex<tokio_serial::SerialStream>>> {
+    pub async fn get_stream(&self, port_id: &str) -> Result<Arc<Mutex<SerialStream>>> {
         let conns = self.connections.lock().await;
         let conn = conns
             .get(port_id)

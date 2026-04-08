@@ -30,7 +30,10 @@ function App() {
     <div class="flex justify-center items-center">
       <div
         class="h-screen aspect-video flex flex-row relative"
-        classList={{ "w-full": showFullScreen(), "container 2xl:mx-56 py-[40px] lg:py-[100px]": !showFullScreen() }}
+        classList={{
+          "w-full": showFullScreen(),
+          "container 2xl:mx-56 py-[40px] lg:py-[100px]": !showFullScreen(),
+        }}
       >
         {/* ActivityBar */}
         <div class="rounded-l-lg rounded-r-none bg-base-200 border border-base-300 flex flex-col h-full">
@@ -40,14 +43,23 @@ function App() {
         {/* Main content */}
         <div class="w-full h-full flex flex-col">
           {/* TopBar */}
-          <div class="bg-base-200 flex items-center justify-end px-3 py-1 gap-2"
-               classList={{ "border-b border-base-300": showFullScreen(), "border-t border-base-300": !showFullScreen() }}>
+          <div
+            class="bg-base-200 flex items-center justify-end px-3 py-1 gap-2"
+            classList={{
+              "border-b border-base-300": showFullScreen(),
+              "border-t border-base-300": !showFullScreen(),
+            }}
+          >
             <TopBar />
           </div>
 
           {/* Panels area */}
-          <div class="flex-1 flex overflow-hidden"
-               classList={{ "border-t border-r border-b border-base-300": !showFullScreen() }}>
+          <div
+            class="flex-1 flex overflow-hidden"
+            classList={{
+              "border-t border-r border-b border-base-300": !showFullScreen(),
+            }}
+          >
             {/* Setting panel (left) */}
             <Show when={showSettingPanel()}>
               <div class="h-full bg-base-200 w-[250px] min-w-[200px] overflow-y-auto border-r border-base-300 custom-scrollbar">
@@ -58,13 +70,13 @@ function App() {
             {/* Main area (center) */}
             <div class="flex-1 flex flex-col overflow-hidden">
               {/* Record panel */}
-              <div class="flex-[7] overflow-y-auto bg-base-100 custom-scrollbar">
+              <div class="flex-7 overflow-y-auto bg-base-100 custom-scrollbar">
                 <RecordPanel />
               </div>
 
               {/* Control + Send panel */}
               <Show when={showSendPanel()}>
-                <div class="flex-[3] flex flex-col bg-base-100 border-t border-base-300">
+                <div class="flex-3 flex flex-col bg-base-100 border-t border-base-300">
                   <div class="border-b border-base-300">
                     <ControlPanel />
                   </div>
@@ -82,8 +94,12 @@ function App() {
 
         {/* Quick Input Panel (right) */}
         <Show when={showQuickInputPanel()}>
-          <div class="h-full bg-base-200 max-w-[600px] w-full border-l border-base-300"
-               classList={{ "rounded-r-lg border border-base-300": !showFullScreen() }}>
+          <div
+            class="h-full bg-base-200 max-w-[600px] w-full border-l border-base-300"
+            classList={{
+              "rounded-r-lg border border-base-300": !showFullScreen(),
+            }}
+          >
             <QuickInputPanel />
           </div>
         </Show>

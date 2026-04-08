@@ -1,7 +1,16 @@
 import { createSignal, createEffect, onCleanup, For, Show } from "solid-js";
-import { onSerialFrame, onBleFrame, type SerialFrameEvent, type BleFrameEvent } from "../lib/events";
+import {
+  onSerialFrame,
+  onBleFrame,
+  type SerialFrameEvent,
+  type BleFrameEvent,
+} from "../lib/events";
 import { activePortId } from "../stores/ui";
-import { parseModbusRtu, parseModbusAscii, type ModbusFrame } from "../lib/commands";
+import {
+  parseModbusRtu,
+  parseModbusAscii,
+  type ModbusFrame,
+} from "../lib/commands";
 
 type DisplayFormat = "hex" | "ascii" | "dec";
 type ModbusMode = "Off" | "RTU" | "ASCII";
@@ -31,12 +40,21 @@ function ModbusView(props: { frame: ModbusFrame }) {
         </span>
         <span>
           <span class="opacity-60">FC:</span>{" "}
-          <span class="text-warning">{formatFunctionCode(props.frame.functionCode, props.frame.functionName)}</span>
+          <span class="text-warning">
+            {formatFunctionCode(
+              props.frame.functionCode,
+              props.frame.functionName,
+            )}
+          </span>
         </span>
         <span>
           <span class="opacity-60">Data:</span>{" "}
           <span>
-            [{props.frame.data.map((b) => `0x${b.toString(16).padStart(2, "0")}`).join(", ")}]
+            [
+            {props.frame.data
+              .map((b) => `0x${b.toString(16).padStart(2, "0")}`)
+              .join(", ")}
+            ]
           </span>
         </span>
         <span
@@ -83,7 +101,8 @@ export default function RecordPanel() {
   const setupSerialListener = async () => {
     const unlisten = await onSerialFrame(async (e: SerialFrameEvent) => {
       if (e.portId !== activePortId()) return;
-      const modbus = modbusMode() !== "Off" ? await tryParseModbus(e.raw) : undefined;
+      const modbus =
+        modbusMode() !== "Off" ? await tryParseModbus(e.raw) : undefined;
       setRecords((prev) => [
         ...prev,
         {
@@ -104,7 +123,8 @@ export default function RecordPanel() {
 
   const setupBleListener = async () => {
     const unlisten = await onBleFrame(async (e: BleFrameEvent) => {
-      const modbus = modbusMode() !== "Off" ? await tryParseModbus(e.raw ?? []) : undefined;
+      const modbus =
+        modbusMode() !== "Off" ? await tryParseModbus(e.raw ?? []) : undefined;
       setRecords((prev) => [
         ...prev,
         {
@@ -148,9 +168,12 @@ export default function RecordPanel() {
 
   const getDisplayData = (record: RecordItem) => {
     switch (record.display) {
-      case "hex":   return record.hex;
-      case "ascii": return record.ascii;
-      case "dec":   return record.dec;
+      case "hex":
+        return record.hex;
+      case "ascii":
+        return record.ascii;
+      case "dec":
+        return record.dec;
     }
   };
 
@@ -186,9 +209,7 @@ export default function RecordPanel() {
           {modbusMode()}
         </button>
         <Show when={modbusMode() !== "Off"}>
-          <span class="text-xs opacity-50 ml-1">
-            (解析失败时显示原始数据)
-          </span>
+          <span class="text-xs opacity-50 ml-1">(解析失败时显示原始数据)</span>
         </Show>
       </div>
 
@@ -230,13 +251,19 @@ export default function RecordPanel() {
                 </div>
                 <div class="chat-bubble wrap-break-word text-sm font-mono">
                   <Show
-                    when={modbusMode() !== "Off" && record.modbus != null && record.modbus !== undefined}
+                    when={
+                      modbusMode() !== "Off" &&
+                      record.modbus != null &&
+                      record.modbus !== undefined
+                    }
                     fallback={
                       <Show
                         when={modbusMode() !== "Off" && record.modbus === null}
                         fallback={<span>{getDisplayData(record)}</span>}
                       >
-                        <span class="opacity-40 italic text-xs mr-1">[Modbus解析失败]</span>
+                        <span class="opacity-40 italic text-xs mr-1">
+                          [Modbus解析失败]
+                        </span>
                         <span>{getDisplayData(record)}</span>
                       </Show>
                     }

@@ -1,8 +1,10 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
-use crate::checksum::{CheckAlgorithm, apply_check};
-use crate::codec::{ascii_string_to_bytes, dec_string_to_bytes, hex_string_to_bytes};
+use crate::{
+    checksum::{CheckAlgorithm, apply_check},
+    codec::{ascii_string_to_bytes, dec_string_to_bytes, hex_string_to_bytes},
+};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -19,6 +21,7 @@ pub enum LineEnding {
     LF,
     /// Carriage return `\r`
     CR,
+    #[allow(clippy::upper_case_acronyms)]
     /// Carriage return + line feed `\r\n`
     CRLF,
     /// Arbitrary byte sequence encoded as a string.

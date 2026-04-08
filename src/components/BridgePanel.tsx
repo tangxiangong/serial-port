@@ -15,19 +15,24 @@ export default function BridgePanel() {
   const [entries, setEntries] = createSignal<BridgeEntry[]>([]);
   let cleanupBridge: (() => void) | undefined;
 
-  const [openPorts, { refetch }] = createResource<string[]>(
-    async () => {
-      try { return await getOpenPorts(); }
-      catch { return []; }
+  const [openPorts, { refetch }] = createResource<string[]>(async () => {
+    try {
+      return await getOpenPorts();
+    } catch {
+      return [];
     }
-  );
+  });
 
   const aToB = () => entries().filter((e) => e.direction === "A→B");
   const bToA = () => entries().filter((e) => e.direction === "B→A");
 
   const handleToggleBridge = async () => {
     if (bridgeActive()) {
-      try { await stopBridge(); } catch (e) { console.error(e); }
+      try {
+        await stopBridge();
+      } catch (e) {
+        console.error(e);
+      }
       cleanupBridge?.();
       cleanupBridge = undefined;
       setBridgeActive(false);
@@ -118,10 +123,7 @@ export default function BridgePanel() {
         </button>
 
         {/* Clear log */}
-        <button
-          class="btn btn-ghost btn-xs"
-          onClick={() => setEntries([])}
-        >
+        <button class="btn btn-ghost btn-xs" onClick={() => setEntries([])}>
           清空
         </button>
       </div>
@@ -137,12 +139,16 @@ export default function BridgePanel() {
           <div class="flex-1 overflow-y-auto p-2 custom-scrollbar">
             <Show
               when={aToB().length > 0}
-              fallback={<div class="opacity-50 text-xs text-center mt-4">暂无数据</div>}
+              fallback={
+                <div class="opacity-50 text-xs text-center mt-4">暂无数据</div>
+              }
             >
               <For each={aToB()}>
                 {(entry) => (
                   <div class="mb-1">
-                    <span class="opacity-50 text-xs mr-2">{entry.timestamp}</span>
+                    <span class="opacity-50 text-xs mr-2">
+                      {entry.timestamp}
+                    </span>
                     <span class="font-mono text-xs">{entry.data}</span>
                   </div>
                 )}
@@ -160,12 +166,16 @@ export default function BridgePanel() {
           <div class="flex-1 overflow-y-auto p-2 custom-scrollbar">
             <Show
               when={bToA().length > 0}
-              fallback={<div class="opacity-50 text-xs text-center mt-4">暂无数据</div>}
+              fallback={
+                <div class="opacity-50 text-xs text-center mt-4">暂无数据</div>
+              }
             >
               <For each={bToA()}>
                 {(entry) => (
                   <div class="mb-1">
-                    <span class="opacity-50 text-xs mr-2">{entry.timestamp}</span>
+                    <span class="opacity-50 text-xs mr-2">
+                      {entry.timestamp}
+                    </span>
                     <span class="font-mono text-xs">{entry.data}</span>
                   </div>
                 )}

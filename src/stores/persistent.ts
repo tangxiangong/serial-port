@@ -31,9 +31,10 @@ export function createPersistentSignal<T>(key: string, defaultValue: T) {
 
   // Save when value changes
   const setAndPersist = (newValue: T | ((prev: T) => T)) => {
-    const resolved = typeof newValue === "function"
-      ? (newValue as (prev: T) => T)(value())
-      : newValue;
+    const resolved =
+      typeof newValue === "function"
+        ? (newValue as (prev: T) => T)(value())
+        : newValue;
     setValue(() => resolved as any);
     setSetting(key, resolved);
   };

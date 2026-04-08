@@ -1,8 +1,10 @@
-use std::sync::Arc;
-use std::sync::atomic::{AtomicU64, Ordering};
-
 use serde::Serialize;
+use std::sync::{
+    Arc,
+    atomic::{AtomicU64, Ordering},
+};
 use tauri::Emitter;
+use tokio::sync::watch::Sender;
 
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -22,7 +24,7 @@ pub struct StatsCollector {
     rx_frames: Arc<AtomicU64>,
     tx_frames: Arc<AtomicU64>,
     error_count: Arc<AtomicU64>,
-    cancel_token: tokio::sync::watch::Sender<bool>,
+    cancel_token: Sender<bool>,
 }
 
 impl StatsCollector {
@@ -83,6 +85,7 @@ impl StatsCollector {
         self.tx_frames.fetch_add(1, Ordering::Relaxed);
     }
 
+    #[allow(dead_code)]
     pub fn record_error(&self) {
         self.error_count.fetch_add(1, Ordering::Relaxed);
     }
@@ -98,7 +101,7 @@ impl StatsCollector {
         }
     }
 
-    pub fn stop(self) {
+    pub fn stop(&self) {
         let _ = self.cancel_token.send(true);
     }
 }

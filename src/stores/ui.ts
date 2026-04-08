@@ -3,7 +3,8 @@ import { createSignal } from "solid-js";
 // Panel visibility
 export const [showSettingPanel, setShowSettingPanel] = createSignal(true);
 export const [showSendPanel, setShowSendPanel] = createSignal(true);
-export const [showQuickInputPanel, setShowQuickInputPanel] = createSignal(false);
+export const [showQuickInputPanel, setShowQuickInputPanel] =
+  createSignal(false);
 export const [showFullScreen, setShowFullScreen] = createSignal(true);
 
 // Theme
@@ -21,7 +22,9 @@ export function initTheme() {
 }
 
 // Device type
-export const [deviceType, setDeviceType] = createSignal<"serial" | "ble">("serial");
+export const [deviceType, setDeviceType] = createSignal<"serial" | "ble">(
+  "serial",
+);
 
 // Active port (for multi-port support)
 export const [activePortId, setActivePortId] = createSignal<string>("default");

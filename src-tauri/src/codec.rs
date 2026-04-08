@@ -24,11 +24,6 @@ pub fn hex_string_to_bytes(s: &str) -> Result<Vec<u8>> {
         .collect()
 }
 
-/// Convert bytes to an uppercase hex string with no separators. [0xAA, 0xBB] -> "AABB"
-pub fn bytes_to_hex_string(data: &[u8]) -> String {
-    data.iter().map(|b| format!("{b:02X}")).collect()
-}
-
 /// Convert bytes to "0xAA, 0xBB" display format.
 pub fn bytes_to_hex_display(data: &[u8]) -> String {
     data.iter()
@@ -77,11 +72,6 @@ pub fn bytes_to_dec_string(data: &[u8]) -> String {
         .map(|b| b.to_string())
         .collect::<Vec<_>>()
         .join(" ")
-}
-
-/// Return true if the string contains only hex characters (0-9, a-f, A-F).
-pub fn is_hex_string(s: &str) -> bool {
-    !s.is_empty() && s.chars().all(|c| c.is_ascii_hexdigit())
 }
 
 /// Reformat a hex input string into canonical "AA BB CC" form.
@@ -152,12 +142,6 @@ mod tests {
     }
 
     #[test]
-    fn test_bytes_to_hex_string() {
-        assert_eq!(bytes_to_hex_string(&[0xAA, 0xBB, 0xCC]), "AABBCC");
-        assert_eq!(bytes_to_hex_string(&[0x0F]), "0F");
-    }
-
-    #[test]
     fn test_bytes_to_hex_display() {
         assert_eq!(bytes_to_hex_display(&[0xAA, 0xBB]), "0xAA, 0xBB");
     }
@@ -197,14 +181,6 @@ mod tests {
         let data: Vec<u8> = vec![0, 1, 127, 128, 255];
         let s = bytes_to_dec_string(&data);
         assert_eq!(dec_string_to_bytes(&s).unwrap(), data);
-    }
-
-    #[test]
-    fn test_is_hex_string() {
-        assert!(is_hex_string("0123456789abcdefABCDEF"));
-        assert!(!is_hex_string("GG"));
-        assert!(!is_hex_string(""));
-        assert!(!is_hex_string("AA BB")); // spaces not allowed
     }
 
     #[test]

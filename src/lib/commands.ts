@@ -59,7 +59,12 @@ export interface StatsSnapshot {
 
 export type SendFormat = "hex" | "ascii" | "dec";
 export type LineEnding = "None" | "LF" | "CR" | "CRLF" | { Custom: string };
-export type CheckAlgorithm = "none" | "checksum" | "parity" | "xor" | "modbus_crc16";
+export type CheckAlgorithm =
+  | "none"
+  | "checksum"
+  | "parity"
+  | "xor"
+  | "modbus_crc16";
 export type DeviceType = "serial" | "ble";
 export type RecordType = "read" | "write" | "system";
 export type LogFormat = "raw" | "hex" | "csv";
@@ -68,14 +73,16 @@ export type ValidateFormat = "hex" | "ascii" | "dec";
 // ── Serial ─────────────────────────────────────────────────────
 export const listSerialPorts = () => invoke<PortInfo[]>("list_serial_ports");
 
-export const openSerialPort = (portId: string, path: string, config: SerialConfig) =>
-  invoke<void>("open_serial_port", { portId, path, config });
+export const openSerialPort = (
+  portId: string,
+  path: string,
+  config: SerialConfig,
+) => invoke<void>("open_serial_port", { portId, path, config });
 
 export const closeSerialPort = (portId: string) =>
   invoke<void>("close_serial_port", { portId });
 
-export const closeAllSerialPorts = () =>
-  invoke<void>("close_all_serial_ports");
+export const closeAllSerialPorts = () => invoke<void>("close_all_serial_ports");
 
 export const getOpenPorts = () => invoke<string[]>("get_open_ports");
 
@@ -97,8 +104,16 @@ export const sendData = (
   format: SendFormat,
   lineEnding: LineEnding,
   checkAlgorithm: CheckAlgorithm,
-  deviceType: DeviceType
-) => invoke<void>("send_data", { portId, input, format, lineEnding, checkAlgorithm, deviceType });
+  deviceType: DeviceType,
+) =>
+  invoke<void>("send_data", {
+    portId,
+    input,
+    format,
+    lineEnding,
+    checkAlgorithm,
+    deviceType,
+  });
 
 export const formatHexInput = (input: string) =>
   invoke<string>("format_hex_input_cmd", { input });
@@ -131,8 +146,11 @@ export const getCurrentStats = (portId: string) =>
   invoke<StatsSnapshot>("get_current_stats", { portId });
 
 // ── File Logger ────────────────────────────────────────────────
-export const startFileLogging = (portId: string, path: string, format: LogFormat) =>
-  invoke<void>("start_file_logging", { portId, path, format });
+export const startFileLogging = (
+  portId: string,
+  path: string,
+  format: LogFormat,
+) => invoke<void>("start_file_logging", { portId, path, format });
 
 export const stopFileLogging = (portId: string) =>
   invoke<void>("stop_file_logging", { portId });

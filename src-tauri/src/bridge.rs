@@ -1,24 +1,29 @@
-use std::sync::Arc;
-
 use anyhow::Result;
-use tauri::Emitter;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::sync::Mutex;
+use std::sync::Arc;
+use tauri::{AppHandle, Emitter};
+use tokio::{
+    io::{AsyncReadExt, AsyncWriteExt},
+    sync::{
+        Mutex,
+        watch::{Receiver, Sender, channel},
+    },
+};
+use tokio_serial::SerialStream;
 
 /// State for an active bridge between two serial ports.
 pub struct Bridge {
-    cancel_token: tokio::sync::watch::Sender<bool>,
+    cancel_token: Sender<bool>,
 }
 
 impl Bridge {
     /// Start bridging: read from port_a's stream, write to port_b, and vice versa.
     /// Also emit events for monitoring.
     pub async fn start(
-        port_a_stream: Arc<Mutex<tokio_serial::SerialStream>>,
-        port_b_stream: Arc<Mutex<tokio_serial::SerialStream>>,
-        app_handle: tauri::AppHandle,
+        port_a_stream: Arc<Mutex<SerialStream>>,
+        port_b_stream: Arc<Mutex<SerialStream>>,
+        app_handle: AppHandle,
     ) -> Result<Self> {
-        let (cancel_tx, cancel_rx) = tokio::sync::watch::channel(false);
+        let (cancel_tx, cancel_rx) = channel(false);
 
         // Spawn A -> B forwarding task
         let cancel_rx_a = cancel_rx.clone();
@@ -46,11 +51,11 @@ impl Bridge {
     }
 
     async fn forward_loop(
-        read_stream: Arc<Mutex<tokio_serial::SerialStream>>,
-        write_stream: Arc<Mutex<tokio_serial::SerialStream>>,
+        read_stream: Arc<Mutex<SerialStream>>,
+        write_stream: Arc<Mutex<SerialStream>>,
         direction: &str,
-        app_handle: tauri::AppHandle,
-        mut cancel_rx: tokio::sync::watch::Receiver<bool>,
+        app_handle: AppHandle,
+        mut cancel_rx: Receiver<bool>,
     ) {
         let mut buf = [0u8; 1024];
         loop {

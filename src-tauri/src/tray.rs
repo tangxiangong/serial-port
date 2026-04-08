@@ -29,12 +29,3 @@ pub fn setup_tray(app: &AppHandle) -> Result<TrayIcon, Box<dyn std::error::Error
     Ok(tray)
 }
 
-/// Update tray tooltip to reflect connection status.
-pub fn update_tray_tooltip(tray: &TrayIcon, connected_ports: &[String]) {
-    let tooltip = if connected_ports.is_empty() {
-        "Serial Port - 未连接".to_string()
-    } else {
-        format!("Serial Port - 已连接: {}", connected_ports.join(", "))
-    };
-    let _ = tray.set_tooltip(Some(&tooltip));
-}

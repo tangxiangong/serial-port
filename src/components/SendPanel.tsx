@@ -1,5 +1,11 @@
 import { createSignal, Show } from "solid-js";
-import { sendData, formatHexInput, type SendFormat, type LineEnding, type CheckAlgorithm } from "../lib/commands";
+import {
+  sendData,
+  formatHexInput,
+  type SendFormat,
+  type LineEnding,
+  type CheckAlgorithm,
+} from "../lib/commands";
 import { activePortId, deviceType } from "../stores/ui";
 
 const CHECK_ALGORITHM_OPTIONS: { label: string; value: CheckAlgorithm }[] = [
@@ -13,7 +19,8 @@ export default function SendPanel() {
   const [input, setInput] = createSignal("");
   const [sendFormat, setSendFormat] = createSignal<SendFormat>("hex");
   const [lineEnding, setLineEnding] = createSignal("None");
-  const [checkAlgorithm, setCheckAlgorithm] = createSignal<CheckAlgorithm>("none");
+  const [checkAlgorithm, setCheckAlgorithm] =
+    createSignal<CheckAlgorithm>("none");
   const [autoSend, setAutoSend] = createSignal(false);
   const [autoInterval, setAutoInterval] = createSignal(1000);
   const [sending, setSending] = createSignal(false);
@@ -38,7 +45,7 @@ export default function SendPanel() {
         sendFormat(),
         getLineEnding(),
         checkAlgorithm(),
-        deviceType()
+        deviceType(),
       );
     } catch (e) {
       console.error("Failed to send data:", e);
@@ -120,7 +127,9 @@ export default function SendPanel() {
           <select
             class="select select-xs select-bordered"
             value={checkAlgorithm()}
-            onChange={(e) => setCheckAlgorithm(e.currentTarget.value as CheckAlgorithm)}
+            onChange={(e) =>
+              setCheckAlgorithm(e.currentTarget.value as CheckAlgorithm)
+            }
           >
             {CHECK_ALGORITHM_OPTIONS.map((opt) => (
               <option value={opt.value}>{opt.label}</option>
@@ -133,7 +142,12 @@ export default function SendPanel() {
             onClick={handleReformat}
             title="整理格式"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+            >
               <path
                 fill="currentColor"
                 d="M11 22q-.825 0-1.412-.587T9 20v-4H6q-.825 0-1.412-.587T4 14V7q0-1.65 1.175-2.825T8 3h12v11q0 .825-.587 1.413T18 16h-3v4q0 .825-.587 1.413T13 22zM6 10h12V5h-1v4h-2V5h-1v2h-2V5H8q-.825 0-1.412.588T6 7zm0 4h12v-2H6zm0 0v-2z"
@@ -159,7 +173,9 @@ export default function SendPanel() {
             type="number"
             class="input input-xs input-bordered w-16 text-center disable-spin-button"
             value={autoInterval()}
-            onInput={(e) => setAutoInterval(parseInt(e.currentTarget.value) || 1000)}
+            onInput={(e) =>
+              setAutoInterval(parseInt(e.currentTarget.value) || 1000)
+            }
             min="100"
             step="100"
           />

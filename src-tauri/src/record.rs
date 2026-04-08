@@ -1,7 +1,6 @@
+use crate::codec::{bytes_to_ascii_string, bytes_to_dec_string, bytes_to_hex_display};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-
-use crate::codec::{bytes_to_ascii_string, bytes_to_dec_string, bytes_to_hex_display};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]

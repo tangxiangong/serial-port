@@ -1,6 +1,16 @@
 import { createSignal } from "solid-js";
-import { activePortId, showBridgePanel, setShowBridgePanel } from "../stores/ui";
-import { clearRecords, exportRecords, startFileLogging, stopFileLogging, type LogFormat } from "../lib/commands";
+import {
+  activePortId,
+  showBridgePanel,
+  setShowBridgePanel,
+} from "../stores/ui";
+import {
+  clearRecords,
+  exportRecords,
+  startFileLogging,
+  stopFileLogging,
+  type LogFormat,
+} from "../lib/commands";
 import { save } from "@tauri-apps/plugin-dialog";
 
 type DisplayFormat = "hex" | "ascii" | "dec";

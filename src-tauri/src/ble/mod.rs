@@ -1,26 +1,25 @@
 pub mod types;
 
-use std::sync::Arc;
-use std::time::Duration;
-
+use crate::codec;
 use anyhow::{Result, anyhow};
-use btleplug::api::{Central, CharPropFlags, Manager as _, Peripheral as _, ScanFilter, WriteType};
+use btleplug::api::{
+    Central, CharPropFlags, Characteristic, Manager as _, Peripheral as _, ScanFilter, WriteType,
+};
 use btleplug::platform::{Adapter, Manager, Peripheral};
 use futures::StreamExt;
 use serde::Serialize;
+use std::{sync::Arc, time::Duration};
 use tauri::{AppHandle, Emitter};
-use tokio::sync::Mutex;
-use uuid::Uuid;
-
-use crate::codec;
+use tokio::sync::{Mutex, watch::Sender};
 use types::{BleDeviceInfo, BleServiceConfig};
+use uuid::Uuid;
 
 pub struct BleManager {
     app_handle: AppHandle,
     adapter: Option<Adapter>,
     connected_peripheral: Arc<Mutex<Option<Peripheral>>>,
-    write_characteristic: Arc<Mutex<Option<btleplug::api::Characteristic>>>,
-    cancel_token: Arc<Mutex<Option<tokio::sync::watch::Sender<bool>>>>,
+    write_characteristic: Arc<Mutex<Option<Characteristic>>>,
+    cancel_token: Arc<Mutex<Option<Sender<bool>>>>,
 }
 
 #[derive(Serialize)]
@@ -215,13 +214,5 @@ impl BleManager {
         *self.write_characteristic.lock().await = None;
 
         Ok(())
-    }
-
-    pub async fn is_connected(&self) -> bool {
-        if let Some(peripheral) = self.connected_peripheral.lock().await.as_ref() {
-            peripheral.is_connected().await.unwrap_or(false)
-        } else {
-            false
-        }
     }
 }

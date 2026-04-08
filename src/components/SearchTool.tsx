@@ -25,7 +25,17 @@ export default function SearchTool() {
         class="btn btn-sm btn-ghost gap-2 absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 opacity-60"
         onClick={() => setOpen(true)}
       >
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
           <circle cx="11" cy="11" r="8" />
           <path d="m21 21-4.3-4.3" />
         </svg>
@@ -33,14 +43,28 @@ export default function SearchTool() {
       </button>
 
       {open() && (
-        <div class="fixed inset-0 z-50 flex items-start justify-center pt-[20vh]" onClick={() => setOpen(false)}>
+        <div
+          class="fixed inset-0 z-50 flex items-start justify-center pt-[20vh]"
+          onClick={() => setOpen(false)}
+        >
           <div class="absolute inset-0 bg-base-100/80 backdrop-blur-sm" />
           <div
             class="relative z-10 w-full max-w-lg rounded-lg border border-base-300 bg-base-100 shadow-lg"
             onClick={(e) => e.stopPropagation()}
           >
             <div class="flex items-center border-b border-base-300 px-3">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 opacity-50 shrink-0">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="mr-2 opacity-50 shrink-0"
+              >
                 <circle cx="11" cy="11" r="8" />
                 <path d="m21 21-4.3-4.3" />
               </svg>

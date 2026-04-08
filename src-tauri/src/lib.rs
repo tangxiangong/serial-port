@@ -11,14 +11,11 @@ mod state;
 mod stats;
 mod tray;
 
-use std::collections::HashMap;
-use std::sync::Arc;
-use tokio::sync::Mutex;
-
 use chrono::Utc;
-use tauri::Manager;
-
 use serde::{Deserialize, Serialize};
+use std::{collections::HashMap, sync::Arc};
+use tauri::Manager;
+use tokio::sync::Mutex;
 
 use ble::types::{BleDeviceInfo, BleServiceConfig};
 use checksum::CheckAlgorithm;
@@ -58,16 +55,28 @@ async fn open_serial_port(
     path: String,
     config: SerialConfig,
     state: tauri::State<'_, AppState>,
+    app: tauri::AppHandle,
 ) -> Result<(), String> {
+    // Create a StatsCollector for this port
+    let collector = Arc::new(stats::StatsCollector::new(port_id.clone(), app.clone()));
     let mgr = state.serial_manager.lock().await;
-    mgr.open_port(port_id.clone(), path, config)
-        .await
-        .map_err(|e| e.to_string())?;
+    mgr.open_port(
+        port_id.clone(),
+        path,
+        config,
+        Some(Arc::clone(&collector)),
+        Arc::clone(&state.file_loggers),
+    )
+    .await
+    .map_err(|e| e.to_string())?;
     // Create a RecordManager for this port
     let mut records = state.record_managers.lock().await;
     records
-        .entry(port_id)
+        .entry(port_id.clone())
         .or_insert_with(record::RecordManager::new);
+    // Store the stats collector
+    let mut collectors = state.stats_collectors.lock().await;
+    collectors.insert(port_id, collector);
     Ok(())
 }
 
@@ -77,7 +86,13 @@ async fn close_serial_port(
     state: tauri::State<'_, AppState>,
 ) -> Result<(), String> {
     let mgr = state.serial_manager.lock().await;
-    mgr.close_port(&port_id).await.map_err(|e| e.to_string())
+    mgr.close_port(&port_id).await.map_err(|e| e.to_string())?;
+    // Stop stats collector for this port
+    let mut collectors = state.stats_collectors.lock().await;
+    if let Some(collector) = collectors.remove(&port_id) {
+        collector.stop();
+    }
+    Ok(())
 }
 
 #[tauri::command]
@@ -162,9 +177,22 @@ async fn send_data(
             mgr.write_port(&port_id, &buffer)
                 .await
                 .map_err(|e| e.to_string())?;
+            // Record stats
+            let collectors = state.stats_collectors.lock().await;
+            if let Some(collector) = collectors.get(&port_id) {
+                collector.record_tx(buffer.len() as u64);
+            }
             port_id
         }
     };
+
+    // Log to file if active
+    let mut loggers = state.file_loggers.lock().await;
+    if let Some(logger) = loggers.get_mut(&record_key) {
+        let _ = logger
+            .log_data(&file_logger::DataDirection::Tx, &buffer)
+            .await;
+    }
 
     let mut records = state.record_managers.lock().await;
     let mgr = records
@@ -263,16 +291,20 @@ fn parse_modbus_ascii(data: Vec<u8>) -> Result<modbus::ModbusFrame, String> {
 #[tauri::command]
 async fn get_current_stats(
     port_id: String,
-    _state: tauri::State<'_, AppState>,
+    state: tauri::State<'_, AppState>,
 ) -> Result<stats::StatsSnapshot, String> {
-    Ok(stats::StatsSnapshot {
-        port_id,
-        rx_bytes_per_sec: 0,
-        tx_bytes_per_sec: 0,
-        rx_frames_per_sec: 0,
-        tx_frames_per_sec: 0,
-        error_count: 0,
-    })
+    let collectors = state.stats_collectors.lock().await;
+    match collectors.get(&port_id) {
+        Some(collector) => Ok(collector.snapshot()),
+        None => Ok(stats::StatsSnapshot {
+            port_id,
+            rx_bytes_per_sec: 0,
+            tx_bytes_per_sec: 0,
+            rx_frames_per_sec: 0,
+            tx_frames_per_sec: 0,
+            error_count: 0,
+        }),
+    }
 }
 
 // ── File Logger Commands ────────────────────────────────────────
@@ -389,6 +421,7 @@ pub fn run() {
                 usb_json,
                 file_loggers: Arc::new(Mutex::new(HashMap::new())),
                 active_bridge: Arc::new(Mutex::new(None)),
+                stats_collectors: Arc::new(Mutex::new(HashMap::new())),
             };
 
             app.manage(state);
