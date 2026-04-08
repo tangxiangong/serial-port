@@ -19,7 +19,11 @@ import {
   setSerialConnected,
 } from "../../stores/ui";
 
-const BAUD_RATES = ["9600", "19200", "38400", "57600", "115200"];
+const BAUD_RATES = [
+  "1200", "2400", "4800", "9600", "14400", "19200",
+  "38400", "56000", "57600", "115200", "128000",
+  "230400", "256000", "460800", "921600", "1000000",
+];
 const DATA_BITS = ["8", "7", "6", "5"];
 const STOP_BITS = ["1", "2"];
 const PARITY_OPTIONS: { label: string; value: Parity }[] = [
@@ -147,15 +151,19 @@ export default function SerialSetting() {
 
         {/* Baud Rate */}
         <label class="text-sm font-medium">波特率</label>
-        <select
-          class="select select-sm select-bordered w-full"
+        <input
+          type="text"
+          inputmode="numeric"
+          class="input input-sm input-bordered w-full"
           value={baudRate()}
-          onChange={(e) => setBaudRate(e.currentTarget.value)}
-        >
+          list="baud-rate-list"
+          onInput={(e) => setBaudRate(e.currentTarget.value.replace(/\D/g, ""))}
+        />
+        <datalist id="baud-rate-list">
           <For each={BAUD_RATES}>
-            {(rate) => <option value={rate}>{rate}</option>}
+            {(rate) => <option value={rate} />}
           </For>
-        </select>
+        </datalist>
 
         {/* Data Bits */}
         <label class="text-sm font-medium">数据位</label>
