@@ -1,4 +1,5 @@
 import { createSignal } from "solid-js";
+import { SearchIcon } from "../assets/icons";
 
 export default function SearchTool() {
   const [open, setOpen] = createSignal(false);
@@ -25,20 +26,7 @@ export default function SearchTool() {
         class="btn btn-sm btn-ghost gap-2 absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 opacity-60"
         onClick={() => setOpen(true)}
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <circle cx="11" cy="11" r="8" />
-          <path d="m21 21-4.3-4.3" />
-        </svg>
+        <SearchIcon class="w-3.5 h-3.5" />
         搜索记录
       </button>
 
@@ -53,21 +41,7 @@ export default function SearchTool() {
             onClick={(e) => e.stopPropagation()}
           >
             <div class="flex items-center border-b border-base-300 px-3">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                class="mr-2 opacity-50 shrink-0"
-              >
-                <circle cx="11" cy="11" r="8" />
-                <path d="m21 21-4.3-4.3" />
-              </svg>
+              <SearchIcon class="w-4 h-4 mr-2 opacity-50 shrink-0" />
               <input
                 class="input input-ghost flex-1 text-sm focus:outline-none"
                 placeholder="搜索记录..."

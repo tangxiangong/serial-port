@@ -6,6 +6,12 @@ import {
   serialConnected,
   bleConnected,
 } from "../stores/ui";
+import {
+  PlusIcon,
+  TrashIcon,
+  CheckSquareIcon,
+  SquareIcon,
+} from "../assets/icons";
 
 interface QuickInputItem {
   id: number;
@@ -162,80 +168,28 @@ export default function QuickInputPanel() {
             onClick={addRow}
             title="新增"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <line x1="12" x2="12" y1="5" y2="19" />
-              <line x1="5" x2="19" y1="12" y2="12" />
-            </svg>
+            <PlusIcon class="w-3.5 h-3.5" />
           </button>
           <button
             class="btn btn-ghost btn-xs btn-square text-error"
             onClick={clearAll}
             title="清空"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M3 6h18" />
-              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-            </svg>
+            <TrashIcon class="w-3.5 h-3.5" />
           </button>
           <button
             class="btn btn-ghost btn-xs btn-square"
             onClick={enableAll}
             title="全部启用"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <polyline points="9 11 12 14 22 4" />
-              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-            </svg>
+            <CheckSquareIcon class="w-3.5 h-3.5" />
           </button>
           <button
             class="btn btn-ghost btn-xs btn-square"
             onClick={disableAll}
             title="全部禁用"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <rect width="18" height="18" x="3" y="3" rx="2" />
-            </svg>
+            <SquareIcon class="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
