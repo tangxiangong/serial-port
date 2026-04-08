@@ -1,5 +1,5 @@
 import { createSignal, onCleanup, onMount, Show } from "solid-js";
-import { serialConnected, bleConnected, activePortId } from "../stores/ui";
+import { activePortId, bleConnected, serialConnected } from "../stores/ui";
 import { getRecordCounts } from "../lib/commands";
 import { onSerialStats, type StatsEvent } from "../lib/events";
 

@@ -2,10 +2,10 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { theme, toggleTheme } from "../stores/ui";
 import {
   GithubIcon,
-  MoonIcon,
-  SunIcon,
   MenuIcon,
+  MoonIcon,
   SettingsIcon,
+  SunIcon,
 } from "../assets/icons";
 
 export default function ActivityBar() {
@@ -33,11 +33,9 @@ export default function ActivityBar() {
       <div class="flex flex-col items-center gap-2">
         {/* Theme toggle */}
         <button class={btnClass} onClick={toggleTheme} title="切换主题">
-          {theme() === "dark" ? (
-            <MoonIcon class="w-4 h-4" />
-          ) : (
-            <SunIcon class="w-4 h-4" />
-          )}
+          {theme() === "dark"
+            ? <MoonIcon class="w-4 h-4" />
+            : <SunIcon class="w-4 h-4" />}
         </button>
 
         {/* Menu */}

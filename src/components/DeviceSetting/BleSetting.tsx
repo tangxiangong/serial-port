@@ -1,9 +1,9 @@
 import { createSignal, For, Show } from "solid-js";
 import {
-  bleScan,
   bleConnect,
-  bleDisconnect,
   type BleDeviceInfo,
+  bleDisconnect,
+  bleScan,
   type BleServiceConfig,
 } from "../../lib/commands";
 import { bleConnected, setBleConnected } from "../../stores/ui";
@@ -99,7 +99,9 @@ export default function BleSetting() {
           disabled={scanning()}
           onClick={handleScan}
         >
-          {scanning() ? <span class="loading loading-spinner loading-xs" /> : null}
+          {scanning()
+            ? <span class="loading loading-spinner loading-xs" />
+            : null}
           {scanning() ? "扫描中..." : "扫描设备"}
         </button>
 
@@ -135,7 +137,9 @@ export default function BleSetting() {
           disabled={connecting() || !selectedDevice()}
           onClick={handleConnect}
         >
-          {connecting() ? <span class="loading loading-spinner loading-xs" /> : null}
+          {connecting()
+            ? <span class="loading loading-spinner loading-xs" />
+            : null}
           {connecting() ? "连接中..." : "连 接"}
         </button>
       </Show>
@@ -146,7 +150,9 @@ export default function BleSetting() {
           disabled={disconnecting()}
           onClick={handleDisconnect}
         >
-          {disconnecting() ? <span class="loading loading-spinner loading-xs" /> : null}
+          {disconnecting()
+            ? <span class="loading loading-spinner loading-xs" />
+            : null}
           {disconnecting() ? "断开中..." : "断 开"}
         </button>
       </Show>

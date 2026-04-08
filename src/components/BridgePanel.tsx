@@ -1,4 +1,4 @@
-import { createSignal, createResource, onCleanup, For, Show } from "solid-js";
+import { createResource, createSignal, For, onCleanup, Show } from "solid-js";
 import { getOpenPorts, startBridge, stopBridge } from "../lib/commands";
 import { onBridgeData } from "../lib/events";
 

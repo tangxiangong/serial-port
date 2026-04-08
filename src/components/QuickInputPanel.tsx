@@ -2,15 +2,15 @@ import { createSignal, For, Show } from "solid-js";
 import { sendData, type SendFormat } from "../lib/commands";
 import {
   activePortId,
+  bleConnected,
   deviceType,
   serialConnected,
-  bleConnected,
 } from "../stores/ui";
 import {
-  PlusIcon,
-  TrashIcon,
   CheckSquareIcon,
+  PlusIcon,
   SquareIcon,
+  TrashIcon,
 } from "../assets/icons";
 
 interface QuickInputItem {
@@ -87,7 +87,7 @@ export default function QuickInputPanel() {
 
   const updateItem = (id: number, field: keyof QuickInputItem, value: any) => {
     setItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
+      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
     );
   };
 
@@ -214,8 +214,7 @@ export default function QuickInputPanel() {
           }}
           disabled={!isConnected()}
           onClick={() =>
-            isLoopSending() ? stopLoopSending() : startLoopSending()
-          }
+            isLoopSending() ? stopLoopSending() : startLoopSending()}
         >
           {isLoopSending() ? "停止循环" : "循环发送"}
         </button>
@@ -226,8 +225,7 @@ export default function QuickInputPanel() {
             class="input input-xs input-bordered w-16 text-center disable-spin-button"
             value={loopInterval()}
             onInput={(e) =>
-              setLoopInterval(parseInt(e.currentTarget.value) || 5000)
-            }
+              setLoopInterval(parseInt(e.currentTarget.value) || 5000)}
             min="1000"
             step="1000"
             disabled={isLoopSending()}
@@ -267,8 +265,7 @@ export default function QuickInputPanel() {
                       class="checkbox checkbox-xs checkbox-primary"
                       checked={item.enabled}
                       onChange={(e) =>
-                        updateItem(item.id, "enabled", e.currentTarget.checked)
-                      }
+                        updateItem(item.id, "enabled", e.currentTarget.checked)}
                     />
                   </td>
                   <td>
@@ -276,8 +273,7 @@ export default function QuickInputPanel() {
                       class="input input-xs input-bordered w-full"
                       value={item.content}
                       onInput={(e) =>
-                        updateItem(item.id, "content", e.currentTarget.value)
-                      }
+                        updateItem(item.id, "content", e.currentTarget.value)}
                       placeholder="请输入内容"
                     />
                     <Show when={item.remark}>
@@ -290,8 +286,7 @@ export default function QuickInputPanel() {
                       class="checkbox checkbox-xs checkbox-primary"
                       checked={item.isHex}
                       onChange={(e) =>
-                        updateItem(item.id, "isHex", e.currentTarget.checked)
-                      }
+                        updateItem(item.id, "isHex", e.currentTarget.checked)}
                     />
                   </td>
                   <td>
@@ -304,8 +299,7 @@ export default function QuickInputPanel() {
                           item.id,
                           "delay",
                           parseInt(e.currentTarget.value) || 0,
-                        )
-                      }
+                        )}
                       min="0"
                       step="100"
                     />

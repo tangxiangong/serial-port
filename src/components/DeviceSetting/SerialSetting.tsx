@@ -1,17 +1,17 @@
-import { createSignal, createEffect, onCleanup, For, Show } from "solid-js";
+import { createEffect, createSignal, For, onCleanup, Show } from "solid-js";
 import {
+  closeSerialPort,
+  type FlowControl,
   listSerialPorts,
   openSerialPort,
-  closeSerialPort,
+  type Parity,
   type PortInfo,
   type SerialConfig,
-  type Parity,
-  type FlowControl,
 } from "../../lib/commands";
 import {
+  onSerialDisconnect,
   onSerialPortAdded,
   onSerialPortRemoved,
-  onSerialDisconnect,
 } from "../../lib/events";
 import {
   activePortId,
@@ -21,9 +21,22 @@ import {
 import { RefreshIcon } from "../../assets/icons";
 
 const BAUD_RATES = [
-  "1200", "2400", "4800", "9600", "14400", "19200",
-  "38400", "56000", "57600", "115200", "128000",
-  "230400", "256000", "460800", "921600", "1000000",
+  "1200",
+  "2400",
+  "4800",
+  "9600",
+  "14400",
+  "19200",
+  "38400",
+  "56000",
+  "57600",
+  "115200",
+  "128000",
+  "230400",
+  "256000",
+  "460800",
+  "921600",
+  "1000000",
 ];
 const DATA_BITS = ["8", "7", "6", "5"];
 const STOP_BITS = ["1", "2"];
@@ -131,7 +144,8 @@ export default function SerialSetting() {
             <For each={ports()}>
               {(p) => (
                 <option value={p.path}>
-                  {p.path}{p.deviceName ? ` (${p.deviceName})` : ""}
+                  {p.path}
+                  {p.deviceName ? ` (${p.deviceName})` : ""}
                 </option>
               )}
             </For>
@@ -217,7 +231,9 @@ export default function SerialSetting() {
           disabled={connecting() || disconnecting() || !selectedPort()}
           onClick={handleConnect}
         >
-          {connecting() ? <span class="loading loading-spinner loading-xs" /> : null}
+          {connecting()
+            ? <span class="loading loading-spinner loading-xs" />
+            : null}
           {connecting() ? "连接中..." : "连 接"}
         </button>
       </Show>
@@ -228,7 +244,9 @@ export default function SerialSetting() {
           disabled={disconnecting()}
           onClick={handleDisconnect}
         >
-          {disconnecting() ? <span class="loading loading-spinner loading-xs" /> : null}
+          {disconnecting()
+            ? <span class="loading loading-spinner loading-xs" />
+            : null}
           {disconnecting() ? "断开中..." : "断 开"}
         </button>
       </Show>

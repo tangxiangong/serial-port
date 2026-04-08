@@ -1,15 +1,15 @@
 import { createSignal } from "solid-js";
 import {
   activePortId,
-  showBridgePanel,
   setShowBridgePanel,
+  showBridgePanel,
 } from "../stores/ui";
 import {
   clearRecords,
   exportRecords,
+  type LogFormat,
   startFileLogging,
   stopFileLogging,
-  type LogFormat,
 } from "../lib/commands";
 import { save } from "@tauri-apps/plugin-dialog";
 

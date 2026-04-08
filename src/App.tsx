@@ -1,24 +1,24 @@
 import { onMount, Show } from "solid-js";
 import "./App.css";
-import { initTheme } from "./stores/ui";
-import { initStore } from "./stores/persistent";
+import { initTheme } from "./stores/ui.ts";
+import { initStore } from "./stores/persistent.ts";
 import {
-  showSettingPanel,
-  showSendPanel,
-  showQuickInputPanel,
-  showFullScreen,
-  showBridgePanel,
   setShowBridgePanel,
-} from "./stores/ui";
-import ActivityBar from "./components/ActivityBar";
-import TopBar from "./components/TopBar";
-import StatusBar from "./components/StatusBar";
-import DeviceSetting from "./components/DeviceSetting";
-import RecordPanel from "./components/RecordPanel";
-import ControlPanel from "./components/ControlPanel";
-import SendPanel from "./components/SendPanel";
-import QuickInputPanel from "./components/QuickInputPanel";
-import BridgePanel from "./components/BridgePanel";
+  showBridgePanel,
+  showFullScreen,
+  showQuickInputPanel,
+  showSendPanel,
+  showSettingPanel,
+} from "./stores/ui.ts";
+import ActivityBar from "./components/ActivityBar.tsx";
+import TopBar from "./components/TopBar.tsx";
+import StatusBar from "./components/StatusBar.tsx";
+import DeviceSetting from "./components/DeviceSetting/index.tsx";
+import RecordPanel from "./components/RecordPanel.tsx";
+import ControlPanel from "./components/ControlPanel.tsx";
+import SendPanel from "./components/SendPanel.tsx";
+import QuickInputPanel from "./components/QuickInputPanel.tsx";
+import BridgePanel from "./components/BridgePanel.tsx";
 
 function App() {
   onMount(async () => {
@@ -114,6 +114,7 @@ function App() {
             <div class="flex items-center justify-between px-4 py-2 border-b border-base-300 bg-base-200">
               <span class="text-sm font-semibold">串口桥接</span>
               <button
+                type="button"
                 class="btn btn-ghost btn-xs"
                 onClick={() => setShowBridgePanel(false)}
               >

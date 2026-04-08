@@ -3,8 +3,9 @@ import { createSignal } from "solid-js";
 // Panel visibility
 export const [showSettingPanel, setShowSettingPanel] = createSignal(true);
 export const [showSendPanel, setShowSendPanel] = createSignal(true);
-export const [showQuickInputPanel, setShowQuickInputPanel] =
-  createSignal(false);
+export const [showQuickInputPanel, setShowQuickInputPanel] = createSignal(
+  false,
+);
 export const [showFullScreen, setShowFullScreen] = createSignal(true);
 
 // Theme

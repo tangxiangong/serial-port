@@ -1,7 +1,7 @@
 import { createSignal } from "solid-js";
 import SerialSetting from "./SerialSetting";
 import BleSetting from "./BleSetting";
-import { SerialIcon, BluetoothIcon } from "../../assets/icons";
+import { BluetoothIcon, SerialIcon } from "../../assets/icons";
 
 export default function DeviceSetting() {
   const [tab, setTab] = createSignal<"serial" | "ble">("serial");

@@ -1,15 +1,15 @@
-import { createSignal, createEffect, onCleanup, For, Show } from "solid-js";
+import { createEffect, createSignal, For, onCleanup, Show } from "solid-js";
 import {
-  onSerialFrame,
-  onBleFrame,
-  type SerialFrameEvent,
   type BleFrameEvent,
+  onBleFrame,
+  onSerialFrame,
+  type SerialFrameEvent,
 } from "../lib/events";
 import { activePortId } from "../stores/ui";
 import {
-  parseModbusRtu,
-  parseModbusAscii,
   type ModbusFrame,
+  parseModbusAscii,
+  parseModbusRtu,
 } from "../lib/commands";
 
 type DisplayFormat = "hex" | "ascii" | "dec";
@@ -101,8 +101,9 @@ export default function RecordPanel() {
   const setupSerialListener = async () => {
     const unlisten = await onSerialFrame(async (e: SerialFrameEvent) => {
       if (e.portId !== activePortId()) return;
-      const modbus =
-        modbusMode() !== "Off" ? await tryParseModbus(e.raw) : undefined;
+      const modbus = modbusMode() !== "Off"
+        ? await tryParseModbus(e.raw)
+        : undefined;
       setRecords((prev) => [
         ...prev,
         {
@@ -123,8 +124,9 @@ export default function RecordPanel() {
 
   const setupBleListener = async () => {
     const unlisten = await onBleFrame(async (e: BleFrameEvent) => {
-      const modbus =
-        modbusMode() !== "Off" ? await tryParseModbus(e.raw ?? []) : undefined;
+      const modbus = modbusMode() !== "Off"
+        ? await tryParseModbus(e.raw ?? [])
+        : undefined;
       setRecords((prev) => [
         ...prev,
         {
@@ -251,11 +253,9 @@ export default function RecordPanel() {
                 </div>
                 <div class="chat-bubble wrap-break-word text-sm font-mono">
                   <Show
-                    when={
-                      modbusMode() !== "Off" &&
+                    when={modbusMode() !== "Off" &&
                       record.modbus != null &&
-                      record.modbus !== undefined
-                    }
+                      record.modbus !== undefined}
                     fallback={
                       <Show
                         when={modbusMode() !== "Off" && record.modbus === null}

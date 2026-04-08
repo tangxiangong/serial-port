@@ -1,10 +1,10 @@
 import { createSignal, Show } from "solid-js";
 import {
-  sendData,
-  formatHexInput,
-  type SendFormat,
-  type LineEnding,
   type CheckAlgorithm,
+  formatHexInput,
+  type LineEnding,
+  sendData,
+  type SendFormat,
 } from "../lib/commands";
 import { activePortId, deviceType } from "../stores/ui";
 import { FormatTextIcon } from "../assets/icons";
@@ -20,8 +20,9 @@ export default function SendPanel() {
   const [input, setInput] = createSignal("");
   const [sendFormat, setSendFormat] = createSignal<SendFormat>("hex");
   const [lineEnding, setLineEnding] = createSignal("None");
-  const [checkAlgorithm, setCheckAlgorithm] =
-    createSignal<CheckAlgorithm>("none");
+  const [checkAlgorithm, setCheckAlgorithm] = createSignal<CheckAlgorithm>(
+    "none",
+  );
   const [autoSend, setAutoSend] = createSignal(false);
   const [autoInterval, setAutoInterval] = createSignal(1000);
   const [sending, setSending] = createSignal(false);
@@ -129,8 +130,7 @@ export default function SendPanel() {
             class="select select-xs select-bordered"
             value={checkAlgorithm()}
             onChange={(e) =>
-              setCheckAlgorithm(e.currentTarget.value as CheckAlgorithm)
-            }
+              setCheckAlgorithm(e.currentTarget.value as CheckAlgorithm)}
           >
             {CHECK_ALGORITHM_OPTIONS.map((opt) => (
               <option value={opt.value}>{opt.label}</option>
@@ -165,8 +165,7 @@ export default function SendPanel() {
             class="input input-xs input-bordered w-16 text-center disable-spin-button"
             value={autoInterval()}
             onInput={(e) =>
-              setAutoInterval(parseInt(e.currentTarget.value) || 1000)
-            }
+              setAutoInterval(parseInt(e.currentTarget.value) || 1000)}
             min="100"
             step="100"
           />

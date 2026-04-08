@@ -1,22 +1,22 @@
 import {
-  showSettingPanel,
-  setShowSettingPanel,
-  showSendPanel,
-  setShowSendPanel,
-  showQuickInputPanel,
-  setShowQuickInputPanel,
-  showFullScreen,
   setShowFullScreen,
-} from "../stores/ui";
+  setShowQuickInputPanel,
+  setShowSendPanel,
+  setShowSettingPanel,
+  showFullScreen,
+  showQuickInputPanel,
+  showSendPanel,
+  showSettingPanel,
+} from "../stores/ui.ts";
 import {
-  PanelLeftIcon,
-  PanelLeftActiveIcon,
-  PanelBottomIcon,
-  PanelBottomActiveIcon,
-  PanelRightIcon,
-  PanelRightActiveIcon,
-  FullscreenIcon,
   FullscreenExitIcon,
+  FullscreenIcon,
+  PanelBottomActiveIcon,
+  PanelBottomIcon,
+  PanelLeftActiveIcon,
+  PanelLeftIcon,
+  PanelRightActiveIcon,
+  PanelRightIcon,
 } from "../assets/icons";
 
 export default function TopBar() {
@@ -32,11 +32,9 @@ export default function TopBar() {
           onClick={() => setShowSettingPanel(!showSettingPanel())}
           title={showSettingPanel() ? "折叠设备设置面板" : "展开设备设置面板"}
         >
-          {showSettingPanel() ? (
-            <PanelLeftActiveIcon class="w-[18px] h-[18px]" />
-          ) : (
-            <PanelLeftIcon class="w-[18px] h-[18px]" />
-          )}
+          {showSettingPanel()
+            ? <PanelLeftActiveIcon class="w-[18px] h-[18px]" />
+            : <PanelLeftIcon class="w-[18px] h-[18px]" />}
         </button>
 
         {/* Toggle send panel */}
@@ -46,11 +44,9 @@ export default function TopBar() {
           onClick={() => setShowSendPanel(!showSendPanel())}
           title={showSendPanel() ? "折叠输入面板" : "展开输入面板"}
         >
-          {showSendPanel() ? (
-            <PanelBottomActiveIcon class="w-[18px] h-[18px]" />
-          ) : (
-            <PanelBottomIcon class="w-[18px] h-[18px]" />
-          )}
+          {showSendPanel()
+            ? <PanelBottomActiveIcon class="w-[18px] h-[18px]" />
+            : <PanelBottomIcon class="w-[18px] h-[18px]" />}
         </button>
 
         {/* Toggle quick input panel */}
@@ -58,15 +54,13 @@ export default function TopBar() {
           class={btnClass}
           classList={{ "btn-active": showQuickInputPanel() }}
           onClick={() => setShowQuickInputPanel(!showQuickInputPanel())}
-          title={
-            showQuickInputPanel() ? "折叠快捷输入面板" : "展开快捷输入面板"
-          }
+          title={showQuickInputPanel()
+            ? "折叠快捷输入面板"
+            : "展开快捷输入面板"}
         >
-          {showQuickInputPanel() ? (
-            <PanelRightActiveIcon class="w-[18px] h-[18px]" />
-          ) : (
-            <PanelRightIcon class="w-[18px] h-[18px]" />
-          )}
+          {showQuickInputPanel()
+            ? <PanelRightActiveIcon class="w-[18px] h-[18px]" />
+            : <PanelRightIcon class="w-[18px] h-[18px]" />}
         </button>
 
         {/* Toggle fullscreen */}
@@ -76,11 +70,9 @@ export default function TopBar() {
           onClick={() => setShowFullScreen(!showFullScreen())}
           title={showFullScreen() ? "退出全尺寸" : "全尺寸显示"}
         >
-          {showFullScreen() ? (
-            <FullscreenExitIcon class="w-4 h-4" />
-          ) : (
-            <FullscreenIcon class="w-4 h-4" />
-          )}
+          {showFullScreen()
+            ? <FullscreenExitIcon class="w-4 h-4" />
+            : <FullscreenIcon class="w-4 h-4" />}
         </button>
       </div>
     </div>
