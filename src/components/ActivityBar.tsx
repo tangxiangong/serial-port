@@ -1,5 +1,12 @@
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { theme, toggleTheme } from "../stores/ui";
+import {
+  setShowQuickInputPanel,
+  setShowSettingPanel,
+  showQuickInputPanel,
+  showSettingPanel,
+  theme,
+  toggleTheme,
+} from "../stores/ui";
 import {
   GithubIcon,
   MenuIcon,
@@ -39,12 +46,22 @@ export default function ActivityBar() {
         </button>
 
         {/* Menu */}
-        <button class={btnClass} title="菜单">
+        <button
+          class={btnClass}
+          classList={{ "btn-active": showQuickInputPanel() }}
+          title="快捷输入"
+          onClick={() => setShowQuickInputPanel(!showQuickInputPanel())}
+        >
           <MenuIcon class="w-4 h-4" />
         </button>
 
         {/* Settings */}
-        <button class={btnClass} title="设置">
+        <button
+          class={btnClass}
+          classList={{ "btn-active": showSettingPanel() }}
+          title="设备设置"
+          onClick={() => setShowSettingPanel(!showSettingPanel())}
+        >
           <SettingsIcon class="w-4 h-4" />
         </button>
       </div>

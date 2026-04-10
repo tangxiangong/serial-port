@@ -5,26 +5,21 @@ import {
   onSerialFrame,
   type SerialFrameEvent,
 } from "../lib/events";
-import { activePortId } from "../stores/ui";
+import { activePortId, pinBottom, readDisplayFormat } from "../stores/ui";
 import {
+  getRecords,
   type ModbusFrame,
   parseModbusAscii,
   parseModbusRtu,
 } from "../lib/commands";
+import {
+  createRecordItem,
+  getRecordDisplayData,
+  type RecordItem,
+  recordItemFromFormattedRecord,
+} from "../lib/record-utils";
 
-type DisplayFormat = "hex" | "ascii" | "dec";
 type ModbusMode = "Off" | "RTU" | "ASCII";
-
-interface RecordItem {
-  recordType: "read" | "write";
-  hex: string;
-  ascii: string;
-  dec: string;
-  raw: number[];
-  timestamp: string;
-  display: DisplayFormat;
-  modbus?: ModbusFrame | null;
-}
 
 function formatFunctionCode(fc: number, name: string): string {
   return `0x${fc.toString(16).padStart(2, "0")} – ${name}`;
@@ -73,7 +68,6 @@ function ModbusView(props: { frame: ModbusFrame }) {
 
 export default function RecordPanel() {
   const [records, setRecords] = createSignal<RecordItem[]>([]);
-  const [pinBottom, setPinBottom] = createSignal(true);
   const [showFullDate, setShowFullDate] = createSignal(false);
   const [modbusMode, setModbusMode] = createSignal<ModbusMode>("Off");
   let containerRef: HTMLDivElement | undefined;
@@ -98,49 +92,44 @@ export default function RecordPanel() {
     return null;
   };
 
+  const appendRecord = async (
+    payload: SerialFrameEvent | BleFrameEvent,
+    recordType: "read" | "write",
+  ) => {
+    const modbus = modbusMode() !== "Off"
+      ? await tryParseModbus(payload.raw ?? [])
+      : undefined;
+
+    setRecords((prev) => [
+      ...prev,
+      createRecordItem(
+        {
+          hex: payload.hex,
+          ascii: payload.ascii,
+          dec: payload.dec,
+          raw: payload.raw ?? [],
+          timestamp: payload.timestamp,
+        },
+        recordType,
+        recordType === "write" ? "hex" : readDisplayFormat(),
+        modbus,
+      ),
+    ]);
+    scrollToBottom();
+  };
+
   const setupSerialListener = async () => {
     const unlisten = await onSerialFrame(async (e: SerialFrameEvent) => {
       if (e.portId !== activePortId()) return;
-      const modbus = modbusMode() !== "Off"
-        ? await tryParseModbus(e.raw)
-        : undefined;
-      setRecords((prev) => [
-        ...prev,
-        {
-          recordType: "read",
-          hex: e.hex,
-          ascii: e.ascii,
-          dec: e.dec,
-          raw: e.raw,
-          timestamp: e.timestamp,
-          display: "hex",
-          modbus,
-        },
-      ]);
-      scrollToBottom();
+      await appendRecord(e, e.recordType ?? "read");
     });
     onCleanup(() => unlisten());
   };
 
   const setupBleListener = async () => {
     const unlisten = await onBleFrame(async (e: BleFrameEvent) => {
-      const modbus = modbusMode() !== "Off"
-        ? await tryParseModbus(e.raw ?? [])
-        : undefined;
-      setRecords((prev) => [
-        ...prev,
-        {
-          recordType: "read",
-          hex: e.hex,
-          ascii: e.ascii,
-          dec: e.dec,
-          raw: (e as any).raw ?? [],
-          timestamp: e.timestamp,
-          display: "hex",
-          modbus,
-        },
-      ]);
-      scrollToBottom();
+      if (activePortId() !== "ble") return;
+      await appendRecord(e, e.recordType ?? "read");
     });
     onCleanup(() => unlisten());
   };
@@ -149,7 +138,7 @@ export default function RecordPanel() {
   setupBleListener();
 
   const cycleDisplay = (index: number) => {
-    const order: DisplayFormat[] = ["hex", "ascii", "dec"];
+    const order = ["hex", "ascii", "dec"] as const;
     setRecords((prev) => {
       const updated = [...prev];
       const current = updated[index];
@@ -168,21 +157,35 @@ export default function RecordPanel() {
     return parts.length > 1 ? parts[1] : timestamp;
   };
 
-  const getDisplayData = (record: RecordItem) => {
-    switch (record.display) {
-      case "hex":
-        return record.hex;
-      case "ascii":
-        return record.ascii;
-      case "dec":
-        return record.dec;
-    }
-  };
-
   const clearRecords = () => setRecords([]);
 
   createEffect(() => {
     (window as any).__clearRecordPanel = clearRecords;
+  });
+
+  createEffect(() => {
+    const nextDisplay = readDisplayFormat();
+    setRecords((prev) =>
+      prev.map((record) =>
+        record.recordType === "read" ? { ...record, display: nextDisplay } : record
+      ),
+    );
+  });
+
+  createEffect(() => {
+    const portId = activePortId();
+    if (!portId) {
+      setRecords([]);
+      return;
+    }
+
+    void getRecords(portId)
+      .then((items) =>
+        setRecords(items.map((item) => recordItemFromFormattedRecord(item, readDisplayFormat()))))
+      .catch((error) => {
+        console.error("Failed to load records:", error);
+        setRecords([]);
+      });
   });
 
   const modbusModes: ModbusMode[] = ["Off", "RTU", "ASCII"];
@@ -196,7 +199,6 @@ export default function RecordPanel() {
 
   return (
     <div class="flex flex-col h-full">
-      {/* Modbus toolbar */}
       <div class="flex items-center gap-2 px-3 py-1 border-b border-base-300 bg-base-200/50">
         <span class="text-xs opacity-60">Modbus:</span>
         <button
@@ -215,7 +217,6 @@ export default function RecordPanel() {
         </Show>
       </div>
 
-      {/* Records */}
       <div
         ref={containerRef}
         class="flex-1 overflow-y-auto scroll-smooth p-2 relative pb-10 custom-scrollbar"
@@ -250,6 +251,9 @@ export default function RecordPanel() {
                   >
                     {record.display.toUpperCase()}
                   </div>
+                  <div class="text-xs opacity-50 uppercase">
+                    {record.recordType}
+                  </div>
                 </div>
                 <div class="chat-bubble wrap-break-word text-sm font-mono">
                   <Show
@@ -259,12 +263,12 @@ export default function RecordPanel() {
                     fallback={
                       <Show
                         when={modbusMode() !== "Off" && record.modbus === null}
-                        fallback={<span>{getDisplayData(record)}</span>}
+                        fallback={<span>{getRecordDisplayData(record)}</span>}
                       >
                         <span class="opacity-40 italic text-xs mr-1">
                           [Modbus解析失败]
                         </span>
-                        <span>{getDisplayData(record)}</span>
+                        <span>{getRecordDisplayData(record)}</span>
                       </Show>
                     }
                   >

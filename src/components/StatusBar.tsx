@@ -1,5 +1,11 @@
 import { createSignal, onCleanup, onMount, Show } from "solid-js";
-import { activePortId, bleConnected, serialConnected } from "../stores/ui";
+import {
+  activePortId,
+  bleConnected,
+  connectedSerialPorts,
+  deviceType,
+  serialConnected,
+} from "../stores/ui";
 import { getRecordCounts } from "../lib/commands";
 import { onSerialStats, type StatsEvent } from "../lib/events";
 
@@ -49,6 +55,19 @@ export default function StatusBar() {
         >
           {isConnected() ? "设备已连接" : "等待连接"}
         </div>
+        <Show when={isConnected()}>
+          <div class="badge badge-sm badge-outline">
+            {deviceType() === "ble" ? "蓝牙" : "串口"}
+          </div>
+          <Show when={deviceType() === "ble"}>
+            <div class="text-xs opacity-70">BLE 会话</div>
+          </Show>
+          <Show when={deviceType() === "serial"}>
+            <div class="text-xs opacity-70">
+              {activePortId() || `${connectedSerialPorts().length} 个串口`}
+            </div>
+          </Show>
+        </Show>
       </div>
 
       <div class="flex h-full items-center gap-3 text-xs opacity-70">

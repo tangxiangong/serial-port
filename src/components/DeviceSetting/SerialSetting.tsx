@@ -2,6 +2,7 @@ import { createEffect, createSignal, For, onCleanup, Show } from "solid-js";
 import {
   closeSerialPort,
   type FlowControl,
+  getOpenPorts,
   listSerialPorts,
   openSerialPort,
   type Parity,
@@ -15,10 +16,20 @@ import {
 } from "../../lib/events";
 import {
   activePortId,
+  connectedSerialPorts,
+  deviceType,
+  setActivePortId,
+  setConnectedSerialPorts,
+  setDeviceType,
   serialConnected,
   setSerialConnected,
 } from "../../stores/ui";
 import { RefreshIcon } from "../../assets/icons";
+import {
+  getNextActivePortId,
+  getSerialConnectionSummary,
+  isPortConnected,
+} from "../../lib/port-utils";
 
 const BAUD_RATES = [
   "1200",
@@ -62,10 +73,35 @@ export default function SerialSetting() {
   const [connecting, setConnecting] = createSignal(false);
   const [disconnecting, setDisconnecting] = createSignal(false);
 
+  const refreshOpenPorts = async () => {
+    try {
+      const openPorts = await getOpenPorts();
+      setConnectedSerialPorts(openPorts);
+      setSerialConnected(openPorts.length > 0);
+
+      if (!selectedPort() && openPorts.length > 0) {
+        setSelectedPort(openPorts[0]);
+      }
+
+      if (
+        deviceType() === "serial" &&
+        activePortId() &&
+        !openPorts.includes(activePortId())
+      ) {
+        setActivePortId(openPorts[0] ?? "");
+      }
+    } catch (e) {
+      console.error("Failed to get open ports:", e);
+    }
+  };
+
   const refreshPorts = async () => {
     try {
       const list = await listSerialPorts();
       setPorts(list);
+      if (!selectedPort() && list.length > 0) {
+        setSelectedPort(list[0].path);
+      }
     } catch (e) {
       console.error("Failed to list serial ports:", e);
     }
@@ -73,13 +109,20 @@ export default function SerialSetting() {
 
   createEffect(() => {
     refreshPorts();
+    refreshOpenPorts();
   });
 
   const setupListeners = async () => {
-    const unlistenAdd = await onSerialPortAdded(() => refreshPorts());
-    const unlistenRemove = await onSerialPortRemoved(() => refreshPorts());
+    const unlistenAdd = await onSerialPortAdded(() => {
+      refreshPorts();
+      refreshOpenPorts();
+    });
+    const unlistenRemove = await onSerialPortRemoved(() => {
+      refreshPorts();
+      refreshOpenPorts();
+    });
     const unlistenDisconnect = await onSerialDisconnect(() => {
-      setSerialConnected(false);
+      refreshOpenPorts();
     });
     onCleanup(() => {
       unlistenAdd();
@@ -101,8 +144,10 @@ export default function SerialSetting() {
         parity: parity(),
         flowControl: flowControl(),
       };
-      await openSerialPort(activePortId(), path, config);
-      setSerialConnected(true);
+      await openSerialPort(path, path, config);
+      setActivePortId(path);
+      setDeviceType("serial");
+      await refreshOpenPorts();
     } catch (e) {
       console.error("Failed to open serial port:", e);
     } finally {
@@ -111,10 +156,18 @@ export default function SerialSetting() {
   };
 
   const handleDisconnect = async () => {
+    const portId = selectedPort();
+    if (!portId) return;
     setDisconnecting(true);
     try {
-      await closeSerialPort(activePortId());
-      setSerialConnected(false);
+      await closeSerialPort(portId);
+      const nextActivePortId = getNextActivePortId(
+        activePortId(),
+        connectedSerialPorts(),
+        portId,
+      );
+      setActivePortId(nextActivePortId);
+      await refreshOpenPorts();
     } catch (e) {
       console.error("Failed to close serial port:", e);
     } finally {
@@ -122,23 +175,58 @@ export default function SerialSetting() {
     }
   };
 
+  const handleSelectPort = (path: string) => {
+    setSelectedPort(path);
+    if (isPortConnected(connectedSerialPorts(), path)) {
+      setActivePortId(path);
+      setDeviceType("serial");
+    }
+  };
+
+  const selectedPortConnected = () =>
+    isPortConnected(connectedSerialPorts(), selectedPort());
+
   return (
     <div class="flex flex-col p-4">
       <div class="flex flex-col gap-y-1.5 pb-4">
         <h3 class="font-semibold leading-none tracking-tight">
-          {selectedPort() && serialConnected() ? selectedPort() : "串口设置"}
+          {serialConnected()
+            ? getSerialConnectionSummary(connectedSerialPorts())
+            : "串口设置"}
         </h3>
-        <p class="text-sm opacity-60">请选择串口连接相关参数</p>
+        <p class="text-sm opacity-60">
+          {serialConnected()
+            ? `当前活动端口: ${activePortId() || "未选择"}`
+            : "请选择串口连接相关参数"}
+        </p>
       </div>
 
+      <Show when={connectedSerialPorts().length > 0}>
+        <div class="flex flex-wrap gap-2 pb-4">
+          <For each={connectedSerialPorts()}>
+            {(portId) => (
+              <button
+                class="badge badge-sm cursor-pointer"
+                classList={{
+                  "badge-primary": activePortId() === portId,
+                  "badge-outline": activePortId() !== portId,
+                }}
+                onClick={() => handleSelectPort(portId)}
+              >
+                {portId}
+              </button>
+            )}
+          </For>
+        </div>
+      </Show>
+
       <div class="flex flex-col space-y-3 pb-4">
-        {/* Port selection */}
         <label class="text-sm font-medium">端口</label>
         <div class="flex gap-2">
           <select
             class="select select-sm select-bordered flex-1"
             value={selectedPort()}
-            onChange={(e) => setSelectedPort(e.currentTarget.value)}
+            onChange={(e) => handleSelectPort(e.currentTarget.value)}
           >
             <option value="" disabled>选择串口</option>
             <For each={ports()}>
@@ -152,14 +240,16 @@ export default function SerialSetting() {
           </select>
           <button
             class="btn btn-sm btn-square btn-ghost"
-            onClick={refreshPorts}
+            onClick={() => {
+              refreshPorts();
+              refreshOpenPorts();
+            }}
             title="刷新端口列表"
           >
             <RefreshIcon class="w-3.5 h-3.5" />
           </button>
         </div>
 
-        {/* Baud Rate */}
         <label class="text-sm font-medium">波特率</label>
         <input
           type="text"
@@ -175,7 +265,6 @@ export default function SerialSetting() {
           </For>
         </datalist>
 
-        {/* Data Bits */}
         <label class="text-sm font-medium">数据位</label>
         <select
           class="select select-sm select-bordered w-full"
@@ -187,7 +276,6 @@ export default function SerialSetting() {
           </For>
         </select>
 
-        {/* Parity */}
         <label class="text-sm font-medium">校验位</label>
         <select
           class="select select-sm select-bordered w-full"
@@ -199,7 +287,6 @@ export default function SerialSetting() {
           </For>
         </select>
 
-        {/* Stop Bits */}
         <label class="text-sm font-medium">停止位</label>
         <select
           class="select select-sm select-bordered w-full"
@@ -211,7 +298,6 @@ export default function SerialSetting() {
           </For>
         </select>
 
-        {/* Flow Control */}
         <label class="text-sm font-medium">流控</label>
         <select
           class="select select-sm select-bordered w-full"
@@ -224,32 +310,29 @@ export default function SerialSetting() {
         </select>
       </div>
 
-      {/* Connect / Disconnect buttons */}
-      <Show when={!serialConnected()}>
+      <div class="flex gap-2">
         <button
-          class="btn btn-primary btn-sm w-full mb-3"
-          disabled={connecting() || disconnecting() || !selectedPort()}
+          class="btn btn-primary btn-sm flex-1"
+          disabled={connecting() || disconnecting() || !selectedPort() ||
+            selectedPortConnected()}
           onClick={handleConnect}
         >
           {connecting()
             ? <span class="loading loading-spinner loading-xs" />
             : null}
-          {connecting() ? "连接中..." : "连 接"}
+          {connecting() ? "连接中..." : "打开所选端口"}
         </button>
-      </Show>
-
-      <Show when={serialConnected()}>
         <button
-          class="btn btn-error btn-sm w-full mb-3"
-          disabled={disconnecting()}
+          class="btn btn-error btn-sm flex-1"
+          disabled={disconnecting() || !selectedPortConnected()}
           onClick={handleDisconnect}
         >
           {disconnecting()
             ? <span class="loading loading-spinner loading-xs" />
             : null}
-          {disconnecting() ? "断开中..." : "断 开"}
+          {disconnecting() ? "断开中..." : "关闭所选端口"}
         </button>
-      </Show>
+      </div>
     </div>
   );
 }

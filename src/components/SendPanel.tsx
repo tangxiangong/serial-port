@@ -6,7 +6,7 @@ import {
   sendData,
   type SendFormat,
 } from "../lib/commands";
-import { activePortId, deviceType } from "../stores/ui";
+import { activePortId, deviceType, sendDisplayFormat, setSendDisplayFormat } from "../stores/ui";
 import { FormatTextIcon } from "../assets/icons";
 
 const CHECK_ALGORITHM_OPTIONS: { label: string; value: CheckAlgorithm }[] = [
@@ -18,7 +18,6 @@ const CHECK_ALGORITHM_OPTIONS: { label: string; value: CheckAlgorithm }[] = [
 
 export default function SendPanel() {
   const [input, setInput] = createSignal("");
-  const [sendFormat, setSendFormat] = createSignal<SendFormat>("hex");
   const [lineEnding, setLineEnding] = createSignal("None");
   const [checkAlgorithm, setCheckAlgorithm] = createSignal<CheckAlgorithm>(
     "none",
@@ -44,7 +43,7 @@ export default function SendPanel() {
       await sendData(
         activePortId(),
         input(),
-        sendFormat(),
+        sendDisplayFormat(),
         getLineEnding(),
         checkAlgorithm(),
         deviceType(),
@@ -104,8 +103,9 @@ export default function SendPanel() {
         {/* Format selector */}
         <select
           class="select select-xs select-bordered"
-          value={sendFormat()}
-          onChange={(e) => setSendFormat(e.currentTarget.value as SendFormat)}
+          value={sendDisplayFormat()}
+          onChange={(e) =>
+            setSendDisplayFormat(e.currentTarget.value as SendFormat)}
         >
           <option value="hex">HEX</option>
           <option value="ascii">ASCII</option>
@@ -125,7 +125,7 @@ export default function SendPanel() {
         </select>
 
         {/* Check algorithm - only for hex mode */}
-        <Show when={sendFormat() === "hex"}>
+        <Show when={sendDisplayFormat() === "hex"}>
           <select
             class="select select-xs select-bordered"
             value={checkAlgorithm()}

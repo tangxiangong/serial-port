@@ -6,7 +6,14 @@ import {
   bleScan,
   type BleServiceConfig,
 } from "../../lib/commands";
-import { bleConnected, setBleConnected } from "../../stores/ui";
+import {
+  activePortId,
+  bleConnected,
+  connectedSerialPorts,
+  setActivePortId,
+  setBleConnected,
+  setDeviceType,
+} from "../../stores/ui";
 
 export default function BleSetting() {
   const [serviceUuid, setServiceUuid] = createSignal("");
@@ -42,6 +49,8 @@ export default function BleSetting() {
       };
       await bleConnect(deviceId, config);
       setBleConnected(true);
+      setActivePortId("ble");
+      setDeviceType("ble");
     } catch (e) {
       console.error("BLE connect failed:", e);
     } finally {
@@ -54,6 +63,11 @@ export default function BleSetting() {
     try {
       await bleDisconnect();
       setBleConnected(false);
+      if (activePortId() === "ble") {
+        const nextSerialPort = connectedSerialPorts()[0] ?? "";
+        setActivePortId(nextSerialPort);
+        setDeviceType(nextSerialPort ? "serial" : "ble");
+      }
     } catch (e) {
       console.error("BLE disconnect failed:", e);
     } finally {

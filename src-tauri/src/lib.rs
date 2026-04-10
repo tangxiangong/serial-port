@@ -14,7 +14,7 @@ mod tray;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, sync::Arc};
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 use tokio::sync::Mutex;
 
 use ble::types::{BleDeviceInfo, BleServiceConfig};
@@ -162,14 +162,30 @@ async fn send_data(
     check_algorithm: CheckAlgorithm,
     device_type: DeviceType,
     state: tauri::State<'_, AppState>,
+    app: tauri::AppHandle,
 ) -> Result<(), String> {
     let buffer = send::build_send_buffer(&input, &format, &line_ending, &check_algorithm)
         .map_err(|e| e.to_string())?;
+    let timestamp = Utc::now().format("%Y-%m-%d %H:%M:%S%.3f").to_string();
+    let hex = crate::codec::bytes_to_hex_spaced(&buffer);
+    let ascii = crate::codec::bytes_to_ascii_string(&buffer);
+    let dec = crate::codec::bytes_to_dec_string(&buffer);
 
     let record_key = match device_type {
         DeviceType::Ble => {
             let mgr = state.ble_manager.lock().await;
             mgr.write(&buffer).await.map_err(|e| e.to_string())?;
+            let _ = app.emit(
+                "ble:frame",
+                serde_json::json!({
+                    "raw": buffer.clone(),
+                    "hex": hex.clone(),
+                    "ascii": ascii.clone(),
+                    "dec": dec.clone(),
+                    "timestamp": timestamp.clone(),
+                    "recordType": "write",
+                }),
+            );
             "ble".to_string()
         }
         DeviceType::Serial => {
@@ -182,6 +198,18 @@ async fn send_data(
             if let Some(collector) = collectors.get(&port_id) {
                 collector.record_tx(buffer.len() as u64);
             }
+            let _ = app.emit(
+                "serial:frame",
+                serde_json::json!({
+                    "portId": port_id.clone(),
+                    "raw": buffer.clone(),
+                    "hex": hex.clone(),
+                    "ascii": ascii.clone(),
+                    "dec": dec.clone(),
+                    "timestamp": timestamp.clone(),
+                    "recordType": "write",
+                }),
+            );
             port_id
         }
     };

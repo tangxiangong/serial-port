@@ -1,5 +1,9 @@
 import { createSignal, For, Show } from "solid-js";
-import { sendData, type SendFormat } from "../lib/commands";
+import {
+  sendData,
+  type SendFormat,
+  type CheckAlgorithm,
+} from "../lib/commands";
 import {
   activePortId,
   bleConnected,
@@ -112,7 +116,7 @@ export default function QuickInputPanel() {
         item.content,
         format,
         "None",
-        "",
+        "none" as CheckAlgorithm,
         deviceType(),
       );
     } catch (e) {

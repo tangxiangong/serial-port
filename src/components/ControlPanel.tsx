@@ -1,6 +1,12 @@
 import { createSignal } from "solid-js";
 import {
   activePortId,
+  pinBottom,
+  readDisplayFormat,
+  sendDisplayFormat,
+  setPinBottom,
+  setReadDisplayFormat,
+  setSendDisplayFormat,
   setShowBridgePanel,
   showBridgePanel,
 } from "../stores/ui";
@@ -12,13 +18,12 @@ import {
   stopFileLogging,
 } from "../lib/commands";
 import { save } from "@tauri-apps/plugin-dialog";
+import { writeTextFile } from "@tauri-apps/plugin-fs";
+import { deviceType } from "../stores/ui";
 
 type DisplayFormat = "hex" | "ascii" | "dec";
 
 export default function ControlPanel() {
-  const [readType, setReadType] = createSignal<DisplayFormat>("hex");
-  const [sendType, setSendType] = createSignal<DisplayFormat>("hex");
-  const [pinBottom, setPinBottom] = createSignal(true);
   const [isLogging, setIsLogging] = createSignal(false);
   const [logFormat, setLogFormat] = createSignal<LogFormat>("hex");
 
@@ -43,7 +48,18 @@ export default function ControlPanel() {
 
   const handleExport = async () => {
     try {
-      await exportRecords(activePortId());
+      const data = await exportRecords(activePortId());
+      const suffix = deviceType() === "ble" ? "ble" : "serial";
+      const filePath = await save({
+        title: "导出会话记录",
+        defaultPath: `${suffix}_records.json`,
+        filters: [
+          { name: "JSON Files", extensions: ["json"] },
+          { name: "All Files", extensions: ["*"] },
+        ],
+      });
+      if (!filePath) return;
+      await writeTextFile(filePath, data);
     } catch (e) {
       console.error("Failed to export records:", e);
     }
@@ -82,17 +98,19 @@ export default function ControlPanel() {
       {/* Read format toggle */}
       <button
         class="badge badge-sm badge-outline badge-info cursor-pointer"
-        onClick={() => setReadType(cycleType(readType()))}
+        onClick={() =>
+          setReadDisplayFormat(cycleType(readDisplayFormat() as DisplayFormat))}
       >
-        接收:{readType().toUpperCase()}
+        接收:{readDisplayFormat().toUpperCase()}
       </button>
 
       {/* Send format toggle */}
       <button
         class="badge badge-sm badge-outline badge-secondary cursor-pointer"
-        onClick={() => setSendType(cycleType(sendType()))}
+        onClick={() =>
+          setSendDisplayFormat(cycleType(sendDisplayFormat() as DisplayFormat))}
       >
-        发送:{sendType().toUpperCase()}
+        发送:{sendDisplayFormat().toUpperCase()}
       </button>
 
       {/* Pin bottom toggle */}
@@ -163,7 +181,7 @@ export default function ControlPanel() {
         class="badge badge-sm badge-outline badge-ghost cursor-pointer"
         onClick={handleClearRecords}
       >
-        清空接收
+        清空记录
       </button>
     </div>
   );

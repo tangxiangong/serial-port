@@ -7,6 +7,7 @@ export interface SerialFrameEvent {
   ascii: string;
   dec: string;
   timestamp: string;
+  recordType?: "read" | "write";
   modbus?: unknown;
 }
 
@@ -16,6 +17,7 @@ export interface BleFrameEvent {
   ascii: string;
   dec: string;
   timestamp: string;
+  recordType?: "read" | "write";
 }
 
 export interface StatsEvent {

@@ -1,6 +1,10 @@
 import { createResource, createSignal, For, onCleanup, Show } from "solid-js";
 import { getOpenPorts, startBridge, stopBridge } from "../lib/commands";
 import { onBridgeData } from "../lib/events";
+import {
+  getBridgeDirectionLabel,
+  partitionBridgeEntries,
+} from "../lib/bridge-utils";
 
 interface BridgeEntry {
   direction: string;
@@ -23,8 +27,8 @@ export default function BridgePanel() {
     }
   });
 
-  const aToB = () => entries().filter((e) => e.direction === "A→B");
-  const bToA = () => entries().filter((e) => e.direction === "B→A");
+  const aToB = () => partitionBridgeEntries(entries()).aToB;
+  const bToA = () => partitionBridgeEntries(entries()).bToA;
 
   const handleToggleBridge = async () => {
     if (bridgeActive()) {
@@ -41,7 +45,10 @@ export default function BridgePanel() {
       try {
         await startBridge(portA(), portB());
         const unlisten = await onBridgeData((e) => {
-          setEntries((prev) => [...prev.slice(-499), e]);
+          setEntries((prev) => [
+            ...prev.slice(-499),
+            { ...e, direction: getBridgeDirectionLabel(e.direction) },
+          ]);
         });
         cleanupBridge = unlisten;
         setBridgeActive(true);
