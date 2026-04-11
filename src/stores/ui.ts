@@ -1,13 +1,12 @@
 import { createSignal } from "solid-js";
 import type { DisplayFormat } from "../lib/record-utils";
 
-// Panel visibility
-export const [showSettingPanel, setShowSettingPanel] = createSignal(true);
-export const [showSendPanel, setShowSendPanel] = createSignal(true);
-export const [showQuickInputPanel, setShowQuickInputPanel] = createSignal(
-  false,
-);
-export const [showFullScreen, setShowFullScreen] = createSignal(true);
+// Tab navigation
+export type TabId = "monitor" | "send" | "quick" | "bridge" | "modbus";
+export const [activeTab, setActiveTab] = createSignal<TabId>("monitor");
+
+// Settings drawer
+export const [showSettingsDrawer, setShowSettingsDrawer] = createSignal(false);
 
 // Theme
 export const [theme, setTheme] = createSignal<"light" | "dark">("dark");
@@ -38,14 +37,9 @@ export const [connectedSerialPorts, setConnectedSerialPorts] = createSignal<
 export const [serialConnected, setSerialConnected] = createSignal(false);
 export const [bleConnected, setBleConnected] = createSignal(false);
 
-// Bridge panel modal
-export const [showBridgePanel, setShowBridgePanel] = createSignal(false);
-
 // Shared display controls
-export const [readDisplayFormat, setReadDisplayFormat] = createSignal<
-  DisplayFormat
->("hex");
-export const [sendDisplayFormat, setSendDisplayFormat] = createSignal<
-  DisplayFormat
->("hex");
+export const [readDisplayFormat, setReadDisplayFormat] =
+  createSignal<DisplayFormat>("hex");
+export const [sendDisplayFormat, setSendDisplayFormat] =
+  createSignal<DisplayFormat>("hex");
 export const [pinBottom, setPinBottom] = createSignal(true);
