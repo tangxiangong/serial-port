@@ -44,55 +44,54 @@ export default function StatusBar() {
   onCleanup(() => clearInterval(timer));
 
   return (
-    <div class="bg-base-200 border-t border-base-300 flex justify-between items-center h-6 px-3">
-      <div class="flex h-full items-center gap-2">
+    <div class="bg-base-200 border-t border-base-300 flex items-center h-6 px-3 text-xs">
+      {/* Left: connection indicator */}
+      <div class="flex items-center gap-2">
         <div
-          class="badge badge-sm gap-1"
+          class="w-1.5 h-1.5 rounded-full"
           classList={{
-            "badge-success": isConnected(),
-            "badge-info": !isConnected(),
+            "bg-success": isConnected(),
+            "bg-base-content/30": !isConnected(),
           }}
+        />
+        <Show
+          when={isConnected()}
+          fallback={<span class="opacity-40">未连接</span>}
         >
-          {isConnected() ? "设备已连接" : "等待连接"}
-        </div>
-        <Show when={isConnected()}>
-          <div class="badge badge-sm badge-outline">
-            {deviceType() === "ble" ? "蓝牙" : "串口"}
-          </div>
-          <Show when={deviceType() === "ble"}>
-            <div class="text-xs opacity-70">BLE 会话</div>
-          </Show>
-          <Show when={deviceType() === "serial"}>
-            <div class="text-xs opacity-70">
-              {activePortId() || `${connectedSerialPorts().length} 个串口`}
-            </div>
-          </Show>
+          <span class="opacity-70">
+            {deviceType() === "ble"
+              ? "BLE"
+              : activePortId() ||
+                `${connectedSerialPorts().length} 个串口`}
+          </span>
         </Show>
       </div>
 
-      <div class="flex h-full items-center gap-3 text-xs opacity-70">
-        <span>Tx: {txCount()} Bytes</span>
-        <span>Rx: {rxCount()} Bytes</span>
+      {/* Center: TX/RX counts */}
+      <div class="flex items-center gap-3 ml-6 opacity-60">
+        <span>TX: {txCount()} B</span>
+        <span>RX: {rxCount()} B</span>
 
         <Show when={stats() !== null}>
           <span class="opacity-40">|</span>
           <span>
             ↑ {formatBytesPerSec(stats()!.txBytesPerSec)}
-            <span class="opacity-50 ml-1">
-              {stats()!.txFramesPerSec.toFixed(0)} fps
-            </span>
           </span>
           <span>
             ↓ {formatBytesPerSec(stats()!.rxBytesPerSec)}
-            <span class="opacity-50 ml-1">
-              {stats()!.rxFramesPerSec.toFixed(0)} fps
-            </span>
           </span>
           <Show when={stats()!.errorCount > 0}>
             <span class="text-error font-semibold">
               ERR: {stats()!.errorCount}
             </span>
           </Show>
+        </Show>
+      </div>
+
+      {/* Right: detailed params */}
+      <div class="ml-auto opacity-40">
+        <Show when={isConnected() && deviceType() === "serial"}>
+          <span>{activePortId()}</span>
         </Show>
       </div>
     </div>
