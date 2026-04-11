@@ -61,8 +61,7 @@ export default function StatusBar() {
           <span class="opacity-70">
             {deviceType() === "ble"
               ? "BLE"
-              : activePortId() ||
-                `${connectedSerialPorts().length} 个串口`}
+              : activePortId() || `${connectedSerialPorts().length} 个串口`}
           </span>
         </Show>
       </div>
@@ -74,12 +73,8 @@ export default function StatusBar() {
 
         <Show when={stats() !== null}>
           <span class="opacity-40">|</span>
-          <span>
-            ↑ {formatBytesPerSec(stats()!.txBytesPerSec)}
-          </span>
-          <span>
-            ↓ {formatBytesPerSec(stats()!.rxBytesPerSec)}
-          </span>
+          <span>↑ {formatBytesPerSec(stats()!.txBytesPerSec)}</span>
+          <span>↓ {formatBytesPerSec(stats()!.rxBytesPerSec)}</span>
           <Show when={stats()!.errorCount > 0}>
             <span class="text-error font-semibold">
               ERR: {stats()!.errorCount}

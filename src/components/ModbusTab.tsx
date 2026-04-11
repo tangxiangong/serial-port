@@ -147,10 +147,7 @@ export default function ModbusTab() {
 
         <span class="opacity-20 select-none">|</span>
 
-        <button
-          class="btn btn-ghost btn-xs gap-1"
-          title="Filter (placeholder)"
-        >
+        <button class="btn btn-ghost btn-xs gap-1" title="Filter (placeholder)">
           <img src={FilterIcon} class="w-3 h-3" alt="" />
         </button>
 
@@ -236,7 +233,10 @@ export default function ModbusTab() {
                   </span>
 
                   {/* Function code + name */}
-                  <span class="w-[100px] shrink-0 truncate" title={entry.frame.functionName}>
+                  <span
+                    class="w-[100px] shrink-0 truncate"
+                    title={entry.frame.functionName}
+                  >
                     0x{toHex2(entry.frame.functionCode)}{" "}
                     <span class="opacity-60">{entry.frame.functionName}</span>
                   </span>

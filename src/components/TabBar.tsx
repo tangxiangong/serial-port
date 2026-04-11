@@ -9,7 +9,11 @@ import {
 } from "../assets/icons";
 import type { Component } from "solid-js";
 
-const tabs: { id: TabId; label: string; icon: Component<{ class?: string }> }[] = [
+const tabs: {
+  id: TabId;
+  label: string;
+  icon: Component<{ class?: string }>;
+}[] = [
   { id: "monitor", label: "监控", icon: MonitorIcon },
   { id: "send", label: "发送", icon: SendIcon },
   { id: "quick", label: "快捷指令", icon: ZapIcon },
@@ -26,7 +30,8 @@ export default function TabBar() {
             class="flex items-center gap-1.5 px-4 py-2 text-xs font-medium transition-colors border-b-2 -mb-px"
             classList={{
               "border-primary text-primary": activeTab() === tab.id,
-              "border-transparent text-base-content/50 hover:text-base-content/70": activeTab() !== tab.id,
+              "border-transparent text-base-content/50 hover:text-base-content/70":
+                activeTab() !== tab.id,
             }}
             onClick={() => setActiveTab(tab.id)}
           >

@@ -30,7 +30,9 @@ export default function TitleBar() {
   return (
     <div class="flex items-center px-3 py-1.5 bg-base-300 border-b border-base-300 gap-3 h-10">
       {/* Logo */}
-      <span class="font-bold text-sm text-primary tracking-wide select-none">SERIAL PORT</span>
+      <span class="font-bold text-sm text-primary tracking-wide select-none">
+        SERIAL PORT
+      </span>
 
       {/* Connection capsule */}
       <Show when={isConnected()}>

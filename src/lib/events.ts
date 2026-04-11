@@ -50,17 +50,15 @@ export const onSerialDisconnect = (
 export const onSerialPortAdded = (
   handler: (e: PortAddedEvent) => void,
 ): Promise<UnlistenFn> =>
-  listen<PortAddedEvent>(
-    "serial:port_added",
-    (event) => handler(event.payload),
+  listen<PortAddedEvent>("serial:port_added", (event) =>
+    handler(event.payload),
   );
 
 export const onSerialPortRemoved = (
   handler: (e: PortRemovedEvent) => void,
 ): Promise<UnlistenFn> =>
-  listen<PortRemovedEvent>(
-    "serial:port_removed",
-    (event) => handler(event.payload),
+  listen<PortRemovedEvent>("serial:port_removed", (event) =>
+    handler(event.payload),
   );
 
 export const onSerialStats = (

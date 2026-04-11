@@ -33,12 +33,7 @@ import {
   setShowSettingsDrawer,
   showSettingsDrawer,
 } from "../stores/ui";
-import {
-  BluetoothIcon,
-  RefreshIcon,
-  SerialIcon,
-  XIcon,
-} from "../assets/icons";
+import { BluetoothIcon, RefreshIcon, SerialIcon, XIcon } from "../assets/icons";
 import {
   getNextActivePortId,
   getSerialConnectionSummary,
@@ -365,8 +360,7 @@ export default function SettingsDrawer() {
                     <select
                       class="select select-xs select-bordered flex-1 min-w-0"
                       value={selectedPort()}
-                      onChange={(e) =>
-                        handleSelectPort(e.currentTarget.value)}
+                      onChange={(e) => handleSelectPort(e.currentTarget.value)}
                     >
                       <option value="" disabled>
                         选择串口
@@ -405,7 +399,8 @@ export default function SettingsDrawer() {
                     value={baudRate()}
                     list="settings-drawer-baud-rate-list"
                     onInput={(e) =>
-                      setBaudRate(e.currentTarget.value.replace(/\D/g, ""))}
+                      setBaudRate(e.currentTarget.value.replace(/\D/g, ""))
+                    }
                   />
                   <datalist id="settings-drawer-baud-rate-list">
                     <For each={BAUD_RATES}>

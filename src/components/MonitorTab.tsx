@@ -134,7 +134,9 @@ export default function MonitorTab() {
     const nextDisplay = readDisplayFormat();
     setRecords((prev) =>
       prev.map((record) =>
-        record.recordType === "read" ? { ...record, display: nextDisplay } : record,
+        record.recordType === "read"
+          ? { ...record, display: nextDisplay }
+          : record,
       ),
     );
   });
@@ -150,7 +152,9 @@ export default function MonitorTab() {
     void getRecords(portId)
       .then((items) =>
         setRecords(
-          items.map((item) => recordItemFromFormattedRecord(item, readDisplayFormat())),
+          items.map((item) =>
+            recordItemFromFormattedRecord(item, readDisplayFormat()),
+          ),
         ),
       )
       .catch((error) => {
@@ -247,7 +251,11 @@ export default function MonitorTab() {
       return `Modbus ${variant} · Addr:${m.slaveId.toString().padStart(2, "0")} Func:${m.functionCode.toString(16).padStart(2, "0").toUpperCase()} ${crcLabel}:${m.crcValid ? "OK" : "FAIL"}`;
     }
     // In hex mode, show ASCII preview as annotation for RX frames
-    if (record.recordType === "read" && readDisplayFormat() === "hex" && record.ascii) {
+    if (
+      record.recordType === "read" &&
+      readDisplayFormat() === "hex" &&
+      record.ascii
+    ) {
       const printable = record.ascii.replace(/[^\x20-\x7e]/g, "·");
       return printable.length > 0 ? printable : "";
     }
@@ -416,10 +424,14 @@ export default function MonitorTab() {
                       when={hasModbus && record.modbus !== null}
                       fallback={
                         <Show
-                          when={modbusMode() !== "Off" && record.modbus === null}
+                          when={
+                            modbusMode() !== "Off" && record.modbus === null
+                          }
                           fallback={<>{getRecordDisplayData(record)}</>}
                         >
-                          <span class="opacity-40 italic mr-1">[parse failed]</span>
+                          <span class="opacity-40 italic mr-1">
+                            [parse failed]
+                          </span>
                           {getRecordDisplayData(record)}
                         </Show>
                       }

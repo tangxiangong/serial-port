@@ -116,7 +116,8 @@ export default function BridgeTab() {
           classList={{
             "btn-success": !bridgeActive(),
             "btn-error": bridgeActive(),
-            "btn-disabled": !bridgeActive() && (!portA() || !portB() || portA() === portB()),
+            "btn-disabled":
+              !bridgeActive() && (!portA() || !portB() || portA() === portB()),
           }}
           onClick={handleToggleBridge}
         >
@@ -149,9 +150,7 @@ export default function BridgeTab() {
           <div class="flex-1 overflow-y-auto p-2 custom-scrollbar font-mono text-xs">
             <Show
               when={aToB().length > 0}
-              fallback={
-                <div class="opacity-50 text-center mt-4">暂无数据</div>
-              }
+              fallback={<div class="opacity-50 text-center mt-4">暂无数据</div>}
             >
               <For each={aToB()}>
                 {(entry) => (
@@ -174,9 +173,7 @@ export default function BridgeTab() {
           <div class="flex-1 overflow-y-auto p-2 custom-scrollbar font-mono text-xs">
             <Show
               when={bToA().length > 0}
-              fallback={
-                <div class="opacity-50 text-center mt-4">暂无数据</div>
-              }
+              fallback={<div class="opacity-50 text-center mt-4">暂无数据</div>}
             >
               <For each={bToA()}>
                 {(entry) => (

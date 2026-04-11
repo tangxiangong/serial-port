@@ -1,5 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { getBridgeDirectionLabel, partitionBridgeEntries } from "./bridge-utils";
+import {
+  getBridgeDirectionLabel,
+  partitionBridgeEntries,
+} from "./bridge-utils";
 
 describe("bridge-utils", () => {
   test("normalizes backend bridge directions for display", () => {

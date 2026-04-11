@@ -37,7 +37,8 @@ const LINE_ENDING_OPTIONS: { label: string; value: LineEnding }[] = [
 export default function SendTab() {
   const [input, setInput] = createSignal("");
   const [lineEnding, setLineEnding] = createSignal<LineEnding>("None");
-  const [checkAlgorithm, setCheckAlgorithm] = createSignal<CheckAlgorithm>("none");
+  const [checkAlgorithm, setCheckAlgorithm] =
+    createSignal<CheckAlgorithm>("none");
   const [autoSend, setAutoSend] = createSignal(false);
   const [autoInterval, setAutoInterval] = createSignal(1000);
   const [sending, setSending] = createSignal(false);
@@ -107,8 +108,10 @@ export default function SendTab() {
             <button
               class="px-2 py-0.5 text-xs transition-colors"
               classList={{
-                "bg-primary text-primary-content": sendDisplayFormat() === opt.value,
-                "bg-base-100 hover:bg-base-200": sendDisplayFormat() !== opt.value,
+                "bg-primary text-primary-content":
+                  sendDisplayFormat() === opt.value,
+                "bg-base-100 hover:bg-base-200":
+                  sendDisplayFormat() !== opt.value,
               }}
               onClick={() => setSendDisplayFormat(opt.value)}
             >
@@ -143,7 +146,9 @@ export default function SendTab() {
           <select
             class="select select-xs select-bordered h-5 min-h-0 py-0 text-xs"
             value={checkAlgorithm()}
-            onChange={(e) => setCheckAlgorithm(e.currentTarget.value as CheckAlgorithm)}
+            onChange={(e) =>
+              setCheckAlgorithm(e.currentTarget.value as CheckAlgorithm)
+            }
           >
             {CHECK_ALGORITHM_OPTIONS.map((opt) => (
               <option value={opt.value}>{opt.label}</option>
@@ -190,7 +195,9 @@ export default function SendTab() {
           type="number"
           class="input input-xs input-bordered w-16 text-center disable-spin-button"
           value={autoInterval()}
-          onInput={(e) => setAutoInterval(parseInt(e.currentTarget.value) || 1000)}
+          onInput={(e) =>
+            setAutoInterval(parseInt(e.currentTarget.value) || 1000)
+          }
           min="100"
           step="100"
           disabled={autoSend()}
