@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Serial Port",
+  "productName": "Serial Studio",
   "version": "0.1.0",
   "identifier": "com.tangxiangong.serialport",
   "build": {
@@ -12,9 +12,14 @@
   "app": {
     "windows": [
       {
-        "title": "Serial Port",
-        "width": 800,
-        "height": 600
+        "title": "Serial Studio",
+        "width": 1120,
+        "height": 720,
+        "minWidth": 780,
+        "minHeight": 540,
+        "center": true,
+        "hiddenTitle": true,
+        "titleBarStyle": "Overlay"
       }
     ],
     "security": {
@@ -31,6 +36,6 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": ["resources/*"]
+    "resources": []
   }
 }

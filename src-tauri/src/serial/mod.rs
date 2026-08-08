@@ -1,17 +1,13 @@
-use anyhow::{Result, anyhow};
-use chrono::Utc;
-use ringbuf::traits::{Consumer, Producer, Split};
+use std::{sync::Arc, time::Duration};
+
+use anyhow::{Result, anyhow, bail};
+use chrono::{SecondsFormat, Utc};
 use serde::Serialize;
-use std::{collections::HashMap, sync::Arc, time::Duration};
 use tauri::{AppHandle, Emitter};
 use tokio::{
-    io::{AsyncReadExt, AsyncWriteExt},
+    io::{AsyncReadExt, AsyncWriteExt, WriteHalf},
     select,
-    sync::{
-        Mutex,
-        watch::{Sender, channel},
-    },
-    time::sleep,
+    sync::{Mutex, watch},
 };
 use tokio_serial::{
     DataBits, FlowControl, Parity, SerialPortBuilderExt, SerialPortType, SerialStream, StopBits,
@@ -20,272 +16,387 @@ use tokio_serial::{
 pub mod hotplug;
 pub mod types;
 
-use types::{FlowControl as CfgFlowControl, Parity as CfgParity, PortInfo, SerialConfig};
-
-use crate::{
-    codec::{bytes_to_ascii_string, bytes_to_dec_string, bytes_to_hex_display},
-    file_logger::FileLogger,
-    stats::StatsCollector,
+use types::{
+    FlowControl as ConfigFlowControl, LineEnding, Parity as ConfigParity, PortInfo, SendFormat,
+    SerialConfig, SerialStatus,
 };
 
-/// Payload emitted for each received serial frame.
+const READ_BUFFER_SIZE: usize = 4096;
+
+#[derive(Clone, Copy, Debug, Serialize)]
+#[serde(rename_all = "lowercase")]
+enum Direction {
+    Receive,
+    Send,
+}
+
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct SerialFrameEvent {
-    port_id: String,
-    raw: Vec<u8>,
+    direction: Direction,
+    bytes: Vec<u8>,
     hex: String,
-    ascii: String,
-    dec: String,
+    text: String,
     timestamp: String,
 }
 
-/// Internal state for a single open serial connection.
-struct SerialConnection {
-    stream: Arc<Mutex<SerialStream>>,
-    cancel_token: Sender<bool>,
+impl SerialFrameEvent {
+    fn new(direction: Direction, bytes: Vec<u8>) -> Self {
+        Self {
+            direction,
+            hex: bytes_to_hex(&bytes),
+            text: String::from_utf8_lossy(&bytes).into_owned(),
+            bytes,
+            timestamp: Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true),
+        }
+    }
 }
 
-/// Manages multiple concurrent serial port connections.
+struct SerialConnection {
+    generation: u64,
+    writer: Arc<Mutex<WriteHalf<SerialStream>>>,
+    cancel: watch::Sender<bool>,
+}
+
+#[derive(Default)]
+struct SerialState {
+    connection: Option<SerialConnection>,
+    generation: u64,
+    path: Option<String>,
+    config: Option<SerialConfig>,
+    rx_bytes: u64,
+    tx_bytes: u64,
+    opened_at: Option<String>,
+    last_error: Option<String>,
+}
+
+impl SerialState {
+    fn status(&self) -> SerialStatus {
+        SerialStatus {
+            connected: self.connection.is_some(),
+            path: self.path.clone(),
+            config: self.config.clone(),
+            rx_bytes: self.rx_bytes,
+            tx_bytes: self.tx_bytes,
+            opened_at: self.opened_at.clone(),
+            last_error: self.last_error.clone(),
+        }
+    }
+}
+
 pub struct SerialManager {
-    connections: Arc<Mutex<HashMap<String, SerialConnection>>>,
+    state: Arc<Mutex<SerialState>>,
     app_handle: AppHandle,
 }
 
 impl SerialManager {
     pub fn new(app_handle: AppHandle) -> Self {
         Self {
-            connections: Arc::new(Mutex::new(HashMap::new())),
+            state: Arc::new(Mutex::new(SerialState::default())),
             app_handle,
         }
     }
 
-    /// List available serial ports, enriching USB ports with device names from
-    /// the provided `usb_json` lookup table.
-    ///
-    /// The JSON structure is:
-    /// ```json
-    /// { "1a86": { "name": "QinHeng Electronics", "devices": { "7523": { "name": "CH340 serial converter", "devname": "CH340" } } } }
-    /// ```
-    pub fn list_ports(usb_json: &serde_json::Value) -> Vec<PortInfo> {
-        let ports = match tokio_serial::available_ports() {
-            Ok(p) => p,
-            Err(_) => return Vec::new(),
-        };
-
-        ports
+    pub fn list_ports() -> Result<Vec<PortInfo>> {
+        let mut ports = tokio_serial::available_ports()
+            .map_err(|error| anyhow!("无法读取串口列表：{error}"))?
             .into_iter()
-            .map(|info| {
-                let (vid, pid, device_name) = match &info.port_type {
-                    SerialPortType::UsbPort(usb) => {
-                        let vid_hex = format!("{:04x}", usb.vid);
-                        let pid_hex = format!("{:04x}", usb.pid);
-
-                        let name = usb_json
-                            .get(&vid_hex)
-                            .and_then(|vendor| vendor.get("devices"))
-                            .and_then(|devices| devices.get(&pid_hex))
-                            .and_then(|device| {
-                                device
-                                    .get("devname")
-                                    .or_else(|| device.get("name"))
-                                    .and_then(|v| v.as_str())
-                                    .map(String::from)
-                            });
-
-                        (Some(vid_hex), Some(pid_hex), name)
-                    }
-                    _ => (None, None, None),
+            .map(|port| {
+                let (manufacturer, serial_number, vid, pid, product) = match port.port_type {
+                    SerialPortType::UsbPort(usb) => (
+                        usb.manufacturer,
+                        usb.serial_number,
+                        Some(format!("{:04X}", usb.vid)),
+                        Some(format!("{:04X}", usb.pid)),
+                        usb.product,
+                    ),
+                    _ => (None, None, None, None, None),
                 };
 
                 PortInfo {
-                    path: info.port_name,
+                    display_name: product.unwrap_or_else(|| short_port_name(&port.port_name)),
+                    path: port.port_name,
+                    manufacturer,
+                    serial_number,
                     vid,
                     pid,
-                    device_name,
                 }
             })
-            .collect()
+            .collect::<Vec<_>>();
+        ports.sort_by(|a, b| a.path.cmp(&b.path));
+        Ok(ports)
     }
 
-    /// Open a serial port and start a background read task that aggregates
-    /// incoming bytes into frames using a 5 ms silence timeout.
-    ///
-    /// If a `StatsCollector` is provided, the read loop will call `record_rx`
-    /// for each emitted frame.
-    pub async fn open_port(
-        &self,
-        port_id: String,
-        path: String,
-        config: SerialConfig,
-        stats: Option<Arc<StatsCollector>>,
-        file_loggers: Arc<Mutex<HashMap<String, FileLogger>>>,
-    ) -> Result<()> {
-        let mut conns = self.connections.lock().await;
-        if conns.contains_key(&port_id) {
-            return Err(anyhow!("port '{}' is already open", port_id));
+    pub async fn connect(&self, path: String, config: SerialConfig) -> Result<SerialStatus> {
+        config.validate()?;
+        if path.trim().is_empty() {
+            bail!("请选择串口");
         }
 
-        // Build and open the serial stream
-        let builder = tokio_serial::new(&path, config.baud_rate)
-            .data_bits(match config.data_bits {
-                5 => DataBits::Five,
-                6 => DataBits::Six,
-                7 => DataBits::Seven,
-                _ => DataBits::Eight,
-            })
-            .stop_bits(match config.stop_bits {
-                2 => StopBits::Two,
-                _ => StopBits::One,
-            })
-            .parity(match config.parity {
-                CfgParity::Odd => Parity::Odd,
-                CfgParity::Even => Parity::Even,
-                CfgParity::None => Parity::None,
-            })
-            .flow_control(match config.flow_control {
-                CfgFlowControl::Software => FlowControl::Software,
-                CfgFlowControl::Hardware => FlowControl::Hardware,
-                CfgFlowControl::None => FlowControl::None,
-            });
-
-        let stream = builder
+        let stream = serial_builder(&path, &config)
             .open_native_async()
-            .map_err(|e| anyhow!("failed to open serial port '{}': {}", path, e))?;
+            .map_err(|error| anyhow!("无法打开 {path}：{error}"))?;
+        let (reader, writer) = tokio::io::split(stream);
+        let (cancel, mut cancelled) = watch::channel(false);
 
-        let stream = Arc::new(Mutex::new(stream));
-        let (cancel_tx, mut cancel_rx) = channel(false);
-
-        let connection = SerialConnection {
-            stream: Arc::clone(&stream),
-            cancel_token: cancel_tx,
+        let (generation, old_connection, status) = {
+            let mut state = self.state.lock().await;
+            state.generation = state.generation.wrapping_add(1);
+            let generation = state.generation;
+            let old_connection = state.connection.take();
+            state.connection = Some(SerialConnection {
+                generation,
+                writer: Arc::new(Mutex::new(writer)),
+                cancel,
+            });
+            state.path = Some(path);
+            state.config = Some(config);
+            state.rx_bytes = 0;
+            state.tx_bytes = 0;
+            state.opened_at = Some(Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true));
+            state.last_error = None;
+            (generation, old_connection, state.status())
         };
-        conns.insert(port_id.clone(), connection);
 
-        // Spawn the background read task
+        if let Some(old) = old_connection {
+            let _ = old.cancel.send(true);
+        }
+
+        let state = Arc::clone(&self.state);
         let app_handle = self.app_handle.clone();
-        let task_port_id = port_id.clone();
-
         tauri::async_runtime::spawn(async move {
-            let (mut prod, mut cons) = ringbuf::HeapRb::<u8>::new(64 * 1024).split();
-            let mut tmp = [0u8; 1024];
+            let mut reader = reader;
+            let mut buffer = [0_u8; READ_BUFFER_SIZE];
 
             loop {
                 select! {
-                    _ = cancel_rx.changed() => break,
-                    result = async {
-                        let mut guard = stream.lock().await;
-                        guard.read(&mut tmp).await
-                    } => {
+                    changed = cancelled.changed() => {
+                        if changed.is_err() || *cancelled.borrow() {
+                            break;
+                        }
+                    }
+                    result = reader.read(&mut buffer) => {
                         match result {
-                            Ok(0) => break, // EOF
-                            Ok(n) => {
-                                prod.push_slice(&tmp[..n]);
-                                // Wait for 5 ms of silence to aggregate a frame
-                                loop {
-                                    select! {
-                                        _ = sleep(Duration::from_millis(5)) => {
-                                            // Silence timeout — emit the frame
-                                            let data: Vec<u8> = cons.pop_iter().collect();
-                                            if !data.is_empty() {
-                                                if let Some(ref s) = stats {
-                                                    s.record_rx(data.len() as u64);
-                                                }
-                                                // Log to file if active
-                                                {
-                                                    let mut loggers = file_loggers.lock().await;
-                                                    if let Some(logger) = loggers.get_mut(&task_port_id) {
-                                                        let _ = logger.log_data(&crate::file_logger::DataDirection::Rx, &data).await;
-                                                    }
-                                                }
-                                                let event = SerialFrameEvent {
-                                                    port_id: task_port_id.clone(),
-                                                    hex: bytes_to_hex_display(&data),
-                                                    ascii: bytes_to_ascii_string(&data),
-                                                    dec: bytes_to_dec_string(&data),
-                                                    raw: data,
-                                                    timestamp: Utc::now().to_rfc3339(),
-                                                };
-                                                let _ = app_handle.emit("serial:frame", &event);
-                                            }
-                                            break;
-                                        }
-                                        more = async {
-                                            let mut guard = stream.lock().await;
-                                            guard.read(&mut tmp).await
-                                        } => {
-                                            match more {
-                                                Ok(0) => break,
-                                                Ok(n) => { prod.push_slice(&tmp[..n]); }
-                                                Err(_) => break,
-                                            }
-                                        }
+                            Ok(0) => {
+                                finish_connection(&state, &app_handle, generation, Some("串口已断开".into())).await;
+                                break;
+                            }
+                            Ok(count) => {
+                                let bytes = buffer[..count].to_vec();
+                                let is_current = {
+                                    let mut state = state.lock().await;
+                                    let is_current = state.connection.as_ref().is_some_and(|connection| connection.generation == generation);
+                                    if is_current {
+                                        state.rx_bytes = state.rx_bytes.saturating_add(count as u64);
                                     }
+                                    is_current
+                                };
+                                if is_current {
+                                    let _ = app_handle.emit("serial:frame", SerialFrameEvent::new(Direction::Receive, bytes));
                                 }
                             }
-                            Err(_) => break,
+                            Err(error) => {
+                                finish_connection(&state, &app_handle, generation, Some(format!("串口读取失败：{error}"))).await;
+                                break;
+                            }
                         }
                     }
                 }
             }
         });
 
-        Ok(())
+        self.emit_status(&status);
+        Ok(status)
     }
 
-    /// Write data to an open serial port.
-    pub async fn write_port(&self, port_id: &str, data: &[u8]) -> Result<()> {
-        let conns = self.connections.lock().await;
-        let conn = conns
-            .get(port_id)
-            .ok_or_else(|| anyhow!("port '{}' is not open", port_id))?;
-
-        let mut stream = conn.stream.lock().await;
-        stream
-            .write_all(data)
-            .await
-            .map_err(|e| anyhow!("write to port '{}' failed: {}", port_id, e))?;
-        stream
-            .flush()
-            .await
-            .map_err(|e| anyhow!("flush port '{}' failed: {}", port_id, e))?;
-
-        Ok(())
-    }
-
-    /// Close a single serial port by its ID.
-    pub async fn close_port(&self, port_id: &str) -> Result<()> {
-        let mut conns = self.connections.lock().await;
-        let conn = conns
-            .remove(port_id)
-            .ok_or_else(|| anyhow!("port '{}' is not open", port_id))?;
-
-        // Signal the read task to stop
-        let _ = conn.cancel_token.send(true);
-        Ok(())
-    }
-
-    /// Close all open serial ports.
-    pub async fn close_all(&self) -> Result<()> {
-        let mut conns = self.connections.lock().await;
-        for (_, conn) in conns.drain() {
-            let _ = conn.cancel_token.send(true);
+    pub async fn disconnect(&self) -> SerialStatus {
+        let (connection, status) = {
+            let mut state = self.state.lock().await;
+            let connection = state.connection.take();
+            state.last_error = None;
+            (connection, state.status())
+        };
+        if let Some(connection) = connection {
+            let _ = connection.cancel.send(true);
         }
+        self.emit_status(&status);
+        status
+    }
+
+    pub async fn send(
+        &self,
+        input: String,
+        format: SendFormat,
+        line_ending: LineEnding,
+    ) -> Result<()> {
+        let mut bytes = encode_input(&input, format)?;
+        if matches!(format, SendFormat::Text) {
+            bytes.extend_from_slice(line_ending.bytes());
+        }
+        if bytes.is_empty() {
+            bail!("发送内容不能为空");
+        }
+
+        let (generation, writer) = {
+            let state = self.state.lock().await;
+            let connection = state
+                .connection
+                .as_ref()
+                .ok_or_else(|| anyhow!("串口未连接"))?;
+            (connection.generation, Arc::clone(&connection.writer))
+        };
+
+        let write_result = async {
+            let mut writer = writer.lock().await;
+            writer.write_all(&bytes).await?;
+            writer.flush().await
+        }
+        .await;
+
+        if let Err(error) = write_result {
+            let reason = format!("串口发送失败：{error}");
+            finish_connection(
+                &self.state,
+                &self.app_handle,
+                generation,
+                Some(reason.clone()),
+            )
+            .await;
+            bail!(reason);
+        }
+
+        {
+            let mut state = self.state.lock().await;
+            if state
+                .connection
+                .as_ref()
+                .is_some_and(|connection| connection.generation == generation)
+            {
+                state.tx_bytes = state.tx_bytes.saturating_add(bytes.len() as u64);
+            }
+        }
+
+        let event = SerialFrameEvent::new(Direction::Send, bytes);
+        let _ = self.app_handle.emit("serial:frame", &event);
         Ok(())
     }
 
-    /// Return a list of currently open port IDs.
-    pub async fn get_open_ports(&self) -> Vec<String> {
-        let conns = self.connections.lock().await;
-        conns.keys().cloned().collect()
+    pub async fn status(&self) -> SerialStatus {
+        self.state.lock().await.status()
     }
 
-    /// Get a clone of the stream Arc for a given port. Used by the bridge module.
-    pub async fn get_stream(&self, port_id: &str) -> Result<Arc<Mutex<SerialStream>>> {
-        let conns = self.connections.lock().await;
-        let conn = conns
-            .get(port_id)
-            .ok_or_else(|| anyhow!("port '{}' is not open", port_id))?;
-        Ok(Arc::clone(&conn.stream))
+    fn emit_status(&self, status: &SerialStatus) {
+        let _ = self.app_handle.emit("serial:status", status);
+    }
+}
+
+fn serial_builder(path: &str, config: &SerialConfig) -> tokio_serial::SerialPortBuilder {
+    tokio_serial::new(path, config.baud_rate)
+        .data_bits(match config.data_bits {
+            5 => DataBits::Five,
+            6 => DataBits::Six,
+            7 => DataBits::Seven,
+            _ => DataBits::Eight,
+        })
+        .stop_bits(if config.stop_bits == 2 {
+            StopBits::Two
+        } else {
+            StopBits::One
+        })
+        .parity(match config.parity {
+            ConfigParity::None => Parity::None,
+            ConfigParity::Odd => Parity::Odd,
+            ConfigParity::Even => Parity::Even,
+        })
+        .flow_control(match config.flow_control {
+            ConfigFlowControl::None => FlowControl::None,
+            ConfigFlowControl::Software => FlowControl::Software,
+            ConfigFlowControl::Hardware => FlowControl::Hardware,
+        })
+        .timeout(Duration::from_millis(100))
+}
+
+async fn finish_connection(
+    state: &Arc<Mutex<SerialState>>,
+    app_handle: &AppHandle,
+    generation: u64,
+    error: Option<String>,
+) {
+    let status = {
+        let mut state = state.lock().await;
+        if !state
+            .connection
+            .as_ref()
+            .is_some_and(|connection| connection.generation == generation)
+        {
+            return;
+        }
+        state.connection = None;
+        state.last_error = error;
+        state.status()
+    };
+    let _ = app_handle.emit("serial:status", status);
+}
+
+fn short_port_name(path: &str) -> String {
+    path.rsplit('/').next().unwrap_or(path).to_string()
+}
+
+fn bytes_to_hex(bytes: &[u8]) -> String {
+    bytes
+        .iter()
+        .map(|byte| format!("{byte:02X}"))
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+fn encode_input(input: &str, format: SendFormat) -> Result<Vec<u8>> {
+    match format {
+        SendFormat::Text => Ok(input.as_bytes().to_vec()),
+        SendFormat::Hex => parse_hex(input),
+    }
+}
+
+fn parse_hex(input: &str) -> Result<Vec<u8>> {
+    let compact = input
+        .replace("0x", "")
+        .replace("0X", "")
+        .chars()
+        .filter(|character| !character.is_whitespace() && *character != ',' && *character != '-')
+        .collect::<String>();
+    if compact.is_empty() {
+        return Ok(Vec::new());
+    }
+    if compact.len() % 2 != 0 {
+        bail!("十六进制内容必须由完整字节组成");
+    }
+    (0..compact.len())
+        .step_by(2)
+        .map(|index| {
+            u8::from_str_radix(&compact[index..index + 2], 16)
+                .map_err(|_| anyhow!("包含无效的十六进制字符"))
+        })
+        .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_common_hex_input_styles() {
+        assert_eq!(parse_hex("AA 01 ff").unwrap(), vec![0xAA, 0x01, 0xFF]);
+        assert_eq!(parse_hex("0xAA,0x01").unwrap(), vec![0xAA, 0x01]);
+        assert_eq!(parse_hex("AA-01").unwrap(), vec![0xAA, 0x01]);
+    }
+
+    #[test]
+    fn rejects_incomplete_hex_bytes() {
+        assert!(parse_hex("A 01").is_err());
+    }
+
+    #[test]
+    fn line_endings_are_only_bytes() {
+        assert_eq!(LineEnding::Crlf.bytes(), b"\r\n");
     }
 }

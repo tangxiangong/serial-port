@@ -1,59 +1,38 @@
-use std::{collections::HashSet, time::Duration};
-use tauri::{AppHandle, Emitter, async_runtime::spawn};
-use tokio::{
-    select,
-    sync::watch::{Sender, channel},
-    time::sleep,
-};
-use tokio_serial::available_ports;
+use std::{collections::BTreeSet, time::Duration};
 
-/// Start a background task that polls `available_ports()` every 500 ms
-/// and emits events when ports are added or removed.
-///
-/// Returns a `watch::Sender<bool>` — send `true` to stop the watcher.
-pub fn start_hotplug_watcher(app_handle: AppHandle) -> Sender<bool> {
-    let (cancel_tx, mut cancel_rx) = channel(false);
+use tauri::{AppHandle, Emitter};
+use tokio::{select, sync::watch, time::sleep};
 
-    spawn(async move {
-        let mut known_ports: HashSet<String> = HashSet::new();
+pub fn start_hotplug_watcher(app_handle: AppHandle) -> watch::Sender<bool> {
+    let (cancel, mut cancelled) = watch::channel(false);
 
-        // Initialize with current ports
-        if let Ok(ports) = available_ports() {
-            for port in &ports {
-                known_ports.insert(port.port_name.clone());
-            }
-        }
-
+    tauri::async_runtime::spawn(async move {
+        let mut known = current_paths();
         loop {
             select! {
-                _ = cancel_rx.changed() => break,
-                _ = sleep(Duration::from_millis(500)) => {
-                    if let Ok(ports) = available_ports() {
-                        let current: HashSet<String> =
-                            ports.iter().map(|p| p.port_name.clone()).collect();
-
-                        // Newly appeared ports
-                        for path in current.difference(&known_ports) {
-                            let _ = app_handle.emit(
-                                "serial:port_added",
-                                serde_json::json!({ "path": path }),
-                            );
-                        }
-
-                        // Disappeared ports
-                        for path in known_ports.difference(&current) {
-                            let _ = app_handle.emit(
-                                "serial:port_removed",
-                                serde_json::json!({ "path": path }),
-                            );
-                        }
-
-                        known_ports = current;
+                changed = cancelled.changed() => {
+                    if changed.is_err() || *cancelled.borrow() {
+                        break;
+                    }
+                }
+                _ = sleep(Duration::from_millis(750)) => {
+                    let current = current_paths();
+                    if current != known {
+                        known = current;
+                        let _ = app_handle.emit("serial:ports-changed", ());
                     }
                 }
             }
         }
     });
 
-    cancel_tx
+    cancel
+}
+
+fn current_paths() -> BTreeSet<String> {
+    tokio_serial::available_ports()
+        .unwrap_or_default()
+        .into_iter()
+        .map(|port| port.port_name)
+        .collect()
 }

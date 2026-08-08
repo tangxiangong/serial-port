@@ -1,54 +1,46 @@
-import { onMount, Show, Switch, Match } from "solid-js";
+import { onCleanup, onMount, Show } from "solid-js";
 import "./App.css";
-import { initTheme, activeTab, showSettingsDrawer } from "./stores/ui";
-import { initStore } from "./stores/persistent";
-import TitleBar from "./components/TitleBar";
-import TabBar from "./components/TabBar";
-import MonitorTab from "./components/MonitorTab";
-import SendTab from "./components/SendTab";
-import QuickCommandTab from "./components/QuickCommandTab";
-import BridgeTab from "./components/BridgeTab";
-import ModbusTab from "./components/ModbusTab";
-import SettingsDrawer from "./components/SettingsDrawer";
+import { XIcon } from "./assets/icons";
+import AppToolbar from "./components/AppToolbar";
+import Composer from "./components/Composer";
+import ConnectionSidebar from "./components/ConnectionSidebar";
 import StatusBar from "./components/StatusBar";
+import Terminal from "./components/Terminal";
+import {
+  appError,
+  dismissError,
+  disposeSerial,
+  initializeSerial,
+} from "./stores/serial";
+import { initAppearance } from "./stores/ui";
 
 function App() {
-  onMount(async () => {
-    initTheme();
-    await initStore();
+  onMount(() => {
+    initAppearance();
+    void initializeSerial();
   });
+  onCleanup(disposeSerial);
 
   return (
-    <div class="h-screen w-full flex flex-col bg-base-100">
-      <TitleBar />
-      <TabBar />
-
-      {/* Content area */}
-      <div class="flex-1 overflow-hidden">
-        <Switch>
-          <Match when={activeTab() === "monitor"}>
-            <MonitorTab />
-          </Match>
-          <Match when={activeTab() === "send"}>
-            <SendTab />
-          </Match>
-          <Match when={activeTab() === "quick"}>
-            <QuickCommandTab />
-          </Match>
-          <Match when={activeTab() === "bridge"}>
-            <BridgeTab />
-          </Match>
-          <Match when={activeTab() === "modbus"}>
-            <ModbusTab />
-          </Match>
-        </Switch>
-      </div>
-
+    <div class="app-shell">
+      <AppToolbar />
+      <main class="workspace">
+        <ConnectionSidebar />
+        <div class="terminal-workspace">
+          <Terminal />
+          <Composer />
+        </div>
+      </main>
       <StatusBar />
 
-      {/* Settings drawer overlay */}
-      <Show when={showSettingsDrawer()}>
-        <SettingsDrawer />
+      <Show when={appError()}>
+        <div class="error-toast" role="alert">
+          <span class="error-dot">!</span>
+          <span>{appError()}</span>
+          <button title="关闭" onClick={dismissError}>
+            <XIcon />
+          </button>
+        </div>
       </Show>
     </div>
   );
