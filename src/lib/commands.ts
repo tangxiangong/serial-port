@@ -2,7 +2,13 @@ import { invoke } from "@tauri-apps/api/core";
 
 export type Parity = "none" | "odd" | "even";
 export type FlowControl = "none" | "software" | "hardware";
-export type SendFormat = "text" | "hex";
+export type SendFormat = "hex" | "ascii" | "gbk" | "utf-8";
+export const ENCODING_OPTIONS: { value: SendFormat; label: string }[] = [
+  { value: "hex", label: "HEX" },
+  { value: "ascii", label: "ASCII" },
+  { value: "gbk", label: "GBK" },
+  { value: "utf-8", label: "UTF-8" },
+];
 export type LineEnding = "none" | "lf" | "cr" | "crlf";
 
 export interface SerialConfig {

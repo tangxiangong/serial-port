@@ -1,4 +1,5 @@
 import { createEffect, For, Show } from "solid-js";
+import { ENCODING_OPTIONS } from "../lib/commands";
 import { SerialIcon, TrashIcon } from "../assets/icons";
 import {
   clearFrames,
@@ -11,7 +12,6 @@ import {
   chooseDisplayMode,
   displayMode,
   setAutoScroll,
-  type DisplayMode,
 } from "../stores/ui";
 
 const timeFormatter = new Intl.DateTimeFormat("zh-CN", {
@@ -56,13 +56,7 @@ export default function Terminal() {
         </div>
         <div class="terminal-actions">
           <div class="segmented-control" role="group" aria-label="数据显示格式">
-            {(
-              [
-                { value: "text", label: "文本" },
-                { value: "hex", label: "HEX" },
-                { value: "both", label: "组合" },
-              ] as { value: DisplayMode; label: string }[]
-            ).map((option) => (
+            {ENCODING_OPTIONS.map((option) => (
               <button
                 classList={{ active: displayMode() === option.value }}
                 aria-pressed={displayMode() === option.value}
@@ -138,10 +132,14 @@ export default function Terminal() {
                   <div class="frame-content">
                     <Show when={displayMode() !== "hex"}>
                       <pre class="text-value">
-                        {readableText(frame.text) || "∅"}
+                        {readableText(
+                          frame.text[
+                            displayMode() as keyof typeof frame.text
+                          ] ?? "",
+                        ) || "∅"}
                       </pre>
                     </Show>
-                    <Show when={displayMode() !== "text"}>
+                    <Show when={displayMode() === "hex"}>
                       <pre class="hex-value">{frame.hex}</pre>
                     </Show>
                   </div>

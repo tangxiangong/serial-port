@@ -1,11 +1,15 @@
 import { createSignal } from "solid-js";
 import { SendIcon } from "../assets/icons";
-import type { LineEnding, SendFormat } from "../lib/commands";
+import {
+  ENCODING_OPTIONS,
+  type LineEnding,
+  type SendFormat,
+} from "../lib/commands";
 import { serialStatus, writeSerial } from "../stores/serial";
 
 export default function Composer() {
   const [input, setInput] = createSignal("");
-  const [format, setFormat] = createSignal<SendFormat>("text");
+  const [format, setFormat] = createSignal<SendFormat>("utf-8");
   const [lineEnding, setLineEnding] = createSignal<LineEnding>("none");
   const [sending, setSending] = createSignal(false);
 
@@ -25,20 +29,15 @@ export default function Composer() {
           role="group"
           aria-label="发送格式"
         >
-          <button
-            classList={{ active: format() === "text" }}
-            aria-pressed={format() === "text"}
-            onClick={() => setFormat("text")}
-          >
-            文本
-          </button>
-          <button
-            classList={{ active: format() === "hex" }}
-            aria-pressed={format() === "hex"}
-            onClick={() => setFormat("hex")}
-          >
-            HEX
-          </button>
+          {ENCODING_OPTIONS.map((option) => (
+            <button
+              classList={{ active: format() === option.value }}
+              aria-pressed={format() === option.value}
+              onClick={() => setFormat(option.value)}
+            >
+              {option.label}
+            </button>
+          ))}
         </div>
 
         <label class="ending-select">

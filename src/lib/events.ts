@@ -5,7 +5,7 @@ export interface SerialFrameEvent {
   direction: "receive" | "send";
   bytes: number[];
   hex: string;
-  text: string;
+  text: Record<"ascii" | "gbk" | "utf-8", string>;
   timestamp: string;
 }
 

@@ -13,8 +13,11 @@ use tokio_serial::{
     DataBits, FlowControl, Parity, SerialPortBuilderExt, SerialPortType, SerialStream, StopBits,
 };
 
+mod encoding;
 pub mod hotplug;
 pub mod types;
+
+use encoding::{DecodedText, ReceiveDecoder, encode_text};
 
 use types::{
     FlowControl as ConfigFlowControl, LineEnding, Parity as ConfigParity, PortInfo, SendFormat,
@@ -36,16 +39,16 @@ struct SerialFrameEvent {
     direction: Direction,
     bytes: Vec<u8>,
     hex: String,
-    text: String,
+    text: DecodedText,
     timestamp: String,
 }
 
 impl SerialFrameEvent {
-    fn new(direction: Direction, bytes: Vec<u8>) -> Self {
+    fn new(direction: Direction, bytes: Vec<u8>, text: DecodedText) -> Self {
         Self {
             direction,
             hex: bytes_to_hex(&bytes),
-            text: String::from_utf8_lossy(&bytes).into_owned(),
+            text,
             bytes,
             timestamp: Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true),
         }
@@ -166,6 +169,7 @@ impl SerialManager {
         let app_handle = self.app_handle.clone();
         tauri::async_runtime::spawn(async move {
             let mut reader = reader;
+            let mut decoder = ReceiveDecoder::new();
             let mut buffer = [0_u8; READ_BUFFER_SIZE];
 
             loop {
@@ -192,7 +196,8 @@ impl SerialManager {
                                     is_current
                                 };
                                 if is_current {
-                                    let _ = app_handle.emit("serial:frame", SerialFrameEvent::new(Direction::Receive, bytes));
+                                    let text = decoder.decode(&bytes, false);
+                                    let _ = app_handle.emit("serial:frame", SerialFrameEvent::new(Direction::Receive, bytes, text));
                                 }
                             }
                             Err(error) => {
@@ -202,6 +207,15 @@ impl SerialManager {
                         }
                     }
                 }
+            }
+
+            // The bytes were already recorded. Only publish the decoder tail;
+            // an empty byte vector keeps RX totals and HEX data unchanged.
+            if let Some(text) = decoder.finish() {
+                let _ = app_handle.emit(
+                    "serial:frame",
+                    SerialFrameEvent::new(Direction::Receive, Vec::new(), text),
+                );
             }
         });
 
@@ -230,7 +244,7 @@ impl SerialManager {
         line_ending: LineEnding,
     ) -> Result<()> {
         let mut bytes = encode_input(&input, format)?;
-        if matches!(format, SendFormat::Text) {
+        if !matches!(format, SendFormat::Hex) {
             bytes.extend_from_slice(line_ending.bytes());
         }
         if bytes.is_empty() {
@@ -276,7 +290,8 @@ impl SerialManager {
             }
         }
 
-        let event = SerialFrameEvent::new(Direction::Send, bytes);
+        let text = ReceiveDecoder::new().decode(&bytes, true);
+        let event = SerialFrameEvent::new(Direction::Send, bytes, text);
         let _ = self.app_handle.emit("serial:frame", &event);
         Ok(())
     }
@@ -352,7 +367,7 @@ fn bytes_to_hex(bytes: &[u8]) -> String {
 
 fn encode_input(input: &str, format: SendFormat) -> Result<Vec<u8>> {
     match format {
-        SendFormat::Text => Ok(input.as_bytes().to_vec()),
+        SendFormat::Ascii | SendFormat::Gbk | SendFormat::Utf8 => encode_text(input, format),
         SendFormat::Hex => parse_hex(input),
     }
 }
@@ -366,6 +381,9 @@ fn parse_hex(input: &str) -> Result<Vec<u8>> {
         .collect::<String>();
     if compact.is_empty() {
         return Ok(Vec::new());
+    }
+    if !compact.is_ascii() {
+        bail!("包含无效的十六进制字符");
     }
     if compact.len() % 2 != 0 {
         bail!("十六进制内容必须由完整字节组成");
@@ -393,6 +411,16 @@ mod tests {
     #[test]
     fn rejects_incomplete_hex_bytes() {
         assert!(parse_hex("A 01").is_err());
+    }
+
+    #[test]
+    fn hex_sends_raw_bytes_and_rejects_non_ascii_without_panicking() {
+        assert_eq!(
+            encode_input("D6 D0 CE C4", SendFormat::Hex).unwrap(),
+            [0xd6, 0xd0, 0xce, 0xc4]
+        );
+        assert!(encode_input("中文", SendFormat::Hex).is_err());
+        assert!(encode_input("é", SendFormat::Hex).is_err());
     }
 
     #[test]

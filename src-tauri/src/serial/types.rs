@@ -82,8 +82,11 @@ pub struct SerialStatus {
 #[derive(Clone, Copy, Debug, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum SendFormat {
-    Text,
     Hex,
+    Ascii,
+    Gbk,
+    #[serde(rename = "utf-8")]
+    Utf8,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize)]
