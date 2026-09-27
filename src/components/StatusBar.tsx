@@ -34,10 +34,10 @@ export default function StatusBar() {
       </div>
       <div class="status-traffic">
         <span class="rx-stat">
-          <b>↓</b> {formatBytes(serialStatus().rxBytes)}
+          <b>↓</b> 接收 {formatBytes(serialStatus().rxBytes)}
         </span>
         <span class="tx-stat">
-          <b>↑</b> {formatBytes(serialStatus().txBytes)}
+          <b>↑</b> 发送 {formatBytes(serialStatus().txBytes)}
         </span>
       </div>
     </footer>

@@ -24,16 +24,17 @@ export default function ConnectionSidebar() {
   const locked = () => serialStatus().connected || isWorking();
 
   return (
-    <aside class="connection-sidebar">
+    <aside class="connection-sidebar" aria-label="串口连接设置">
       <div class="sidebar-scroll">
         <div class="sidebar-heading">
           <div>
-            <p class="eyebrow">CONNECTION</p>
+            <p class="sidebar-caption">设备与配置</p>
             <h2>串口连接</h2>
           </div>
           <button
             classList={{ "icon-button": true, spinning: isRefreshing() }}
             title="刷新串口"
+            aria-label="刷新串口"
             onClick={refreshPorts}
             disabled={isRefreshing()}
           >
@@ -67,6 +68,9 @@ export default function ConnectionSidebar() {
             </select>
           </div>
 
+          <Show when={ports().length === 0}>
+            <p class="port-help">接入串口设备后，点击右上角刷新。</p>
+          </Show>
           <Show when={selectedPort()}>
             {(port) => (
               <div class="port-card">
@@ -163,10 +167,14 @@ export default function ConnectionSidebar() {
             </div>
           </div>
 
-          <label class="field-label" for="parity">
+          <span class="field-label" id="parity-label">
             校验位
-          </label>
-          <div class="segmented-control full-width" id="parity">
+          </span>
+          <div
+            class="segmented-control full-width"
+            role="group"
+            aria-labelledby="parity-label"
+          >
             {[
               ["none", "无"],
               ["even", "偶"],
@@ -174,6 +182,7 @@ export default function ConnectionSidebar() {
             ].map(([value, label]) => (
               <button
                 classList={{ active: serialConfig().parity === value }}
+                aria-pressed={serialConfig().parity === value}
                 disabled={locked()}
                 onClick={() =>
                   updateConfig({ parity: value as "none" | "even" | "odd" })

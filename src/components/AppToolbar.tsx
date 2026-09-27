@@ -1,59 +1,37 @@
-import { MoonIcon, SerialIcon, SunIcon, TrashIcon } from "../assets/icons";
-import { clearFrames, frames, serialStatus } from "../stores/serial";
-import {
-  chooseDisplayMode,
-  displayMode,
-  theme,
-  toggleTheme,
-  type DisplayMode,
-} from "../stores/ui";
-
-const displayOptions: Array<{ value: DisplayMode; label: string }> = [
-  { value: "text", label: "文本" },
-  { value: "hex", label: "HEX" },
-  { value: "both", label: "组合" },
-];
+import { MoonIcon, SerialIcon, SunIcon } from "../assets/icons";
+import { serialStatus } from "../stores/serial";
+import { theme, toggleTheme } from "../stores/ui";
 
 export default function AppToolbar() {
   return (
     <header class="app-toolbar" data-tauri-drag-region>
       <div class="app-identity" data-tauri-drag-region>
-        <span class="app-mark">
+        <span class="app-mark" aria-hidden="true">
           <SerialIcon />
         </span>
-        <span class="app-title">Serial Studio</span>
-        <span
-          classList={{
-            "connection-dot": true,
-            connected: serialStatus().connected,
-          }}
-          aria-label={serialStatus().connected ? "已连接" : "未连接"}
-        />
-      </div>
-
-      <div class="toolbar-actions">
-        <div class="segmented-control compact" aria-label="数据显示格式">
-          {displayOptions.map((option) => (
-            <button
-              classList={{ active: displayMode() === option.value }}
-              onClick={() => chooseDisplayMode(option.value)}
-            >
-              {option.label}
-            </button>
-          ))}
+        <div class="window-title" data-tauri-drag-region>
+          <span class="app-title" data-tauri-drag-region>
+            Serial Studio
+          </span>
+          <span class="app-subtitle" data-tauri-drag-region>
+            串口调试工作台
+          </span>
         </div>
+      </div>
+      <div class="toolbar-actions">
+        <span class="connection-state">
+          <span
+            classList={{
+              "connection-dot": true,
+              connected: serialStatus().connected,
+            }}
+          />
+          {serialStatus().connected ? "已连接" : "未连接"}
+        </span>
         <button
-          class="icon-button"
-          title="清空终端"
-          disabled={frames().length === 0}
-          onClick={clearFrames}
-        >
-          <TrashIcon />
-        </button>
-        <span class="toolbar-divider" />
-        <button
-          class="icon-button"
+          class="icon-button glass-control"
           title={theme() === "light" ? "切换到深色模式" : "切换到浅色模式"}
+          aria-label={theme() === "light" ? "切换到深色模式" : "切换到浅色模式"}
           onClick={toggleTheme}
         >
           {theme() === "light" ? <MoonIcon /> : <SunIcon />}

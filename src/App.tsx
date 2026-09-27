@@ -1,3 +1,4 @@
+import { isTauri } from "@tauri-apps/api/core";
 import { onCleanup, onMount, Show } from "solid-js";
 import "./App.css";
 import { XIcon } from "./assets/icons";
@@ -16,6 +17,9 @@ import { initAppearance } from "./stores/ui";
 
 function App() {
   onMount(() => {
+    if (isTauri() && /Mac/.test(navigator.platform)) {
+      document.documentElement.dataset.nativeGlass = "true";
+    }
     initAppearance();
     void initializeSerial();
   });
@@ -37,7 +41,7 @@ function App() {
         <div class="error-toast" role="alert">
           <span class="error-dot">!</span>
           <span>{appError()}</span>
-          <button title="关闭" onClick={dismissError}>
+          <button title="关闭" aria-label="关闭错误提示" onClick={dismissError}>
             <XIcon />
           </button>
         </div>

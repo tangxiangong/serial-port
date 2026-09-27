@@ -17,17 +17,24 @@ export default function Composer() {
   };
 
   return (
-    <section class="composer-panel">
+    <section class="composer-panel" aria-label="发送数据">
       <div class="composer-options">
-        <div class="segmented-control compact">
+        <span class="panel-title">发送</span>
+        <div
+          class="segmented-control compact"
+          role="group"
+          aria-label="发送格式"
+        >
           <button
             classList={{ active: format() === "text" }}
+            aria-pressed={format() === "text"}
             onClick={() => setFormat("text")}
           >
             文本
           </button>
           <button
             classList={{ active: format() === "hex" }}
+            aria-pressed={format() === "hex"}
             onClick={() => setFormat("hex")}
           >
             HEX
@@ -54,6 +61,7 @@ export default function Composer() {
 
       <div class="composer-input-row">
         <textarea
+          aria-label="要发送的数据"
           value={input()}
           placeholder={
             format() === "hex"
@@ -73,9 +81,11 @@ export default function Composer() {
           class="send-button"
           disabled={!serialStatus().connected || !input() || sending()}
           title="发送（⌘ Enter）"
+          aria-label={sending() ? "正在发送" : "发送数据"}
           onClick={submit}
         >
           <SendIcon />
+          <span>{sending() ? "发送中" : "发送"}</span>
         </button>
       </div>
     </section>
