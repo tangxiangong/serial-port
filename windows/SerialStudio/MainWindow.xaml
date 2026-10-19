@@ -1,0 +1,70 @@
+<Window x:Class="SerialStudio.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="using:SerialStudio" Title="Serial Studio">
+  <Grid x:Name="Root" Loaded="OnLoaded" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+    <CommandBar DefaultLabelPosition="Right" Background="Transparent">
+      <CommandBar.Content><TextBlock Text="Serial Studio" Style="{ThemeResource SubtitleTextBlockStyle}" Margin="20,12"/></CommandBar.Content>
+      <AppBarButton x:Name="CheckUpdateButton" Label="检查更新" Icon="Download" Click="OnCheckUpdate"/>
+      <AppBarButton x:Name="ApplyUpdateButton" Label="安装更新" Icon="Refresh" Click="OnApplyUpdate" Visibility="Collapsed"/>
+      <AppBarButton Label="设置" Icon="Setting" Click="OnSettings"/>
+    </CommandBar>
+    <Grid Grid.Row="1">
+      <Grid.ColumnDefinitions><ColumnDefinition Width="280"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+      <Grid Padding="20,16" Background="{ThemeResource LayerFillColorDefaultBrush}">
+        <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+          <StackPanel Spacing="16">
+            <TextBlock Text="设备与配置" Style="{ThemeResource SubtitleTextBlockStyle}"/>
+            <ComboBox x:Name="PortPicker" Header="串口设备" HorizontalAlignment="Stretch" DisplayMemberPath="DisplayName" SelectionChanged="OnSelectionChanged"/>
+            <TextBlock x:Name="PortDetails" TextWrapping="Wrap" IsTextSelectionEnabled="True" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+            <Button Content="刷新串口" Click="OnRefresh"><Button.KeyboardAccelerators><KeyboardAccelerator Key="R" Modifiers="Control" Invoked="OnRefreshShortcut"/></Button.KeyboardAccelerators></Button>
+            <StackPanel x:Name="ConfigPanel" Spacing="16">
+              <ComboBox x:Name="BaudPicker" Header="波特率" HorizontalAlignment="Stretch" SelectionChanged="OnSelectionChanged"/>
+              <Grid ColumnSpacing="16"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+                <ComboBox x:Name="DataBitsPicker" Header="数据位" HorizontalAlignment="Stretch" SelectionChanged="OnSelectionChanged"/>
+                <ComboBox x:Name="StopBitsPicker" Grid.Column="1" Header="停止位" HorizontalAlignment="Stretch" SelectionChanged="OnSelectionChanged"/>
+              </Grid>
+              <ComboBox x:Name="ParityPicker" Header="校验位" HorizontalAlignment="Stretch" SelectionChanged="OnSelectionChanged"/>
+              <ComboBox x:Name="FlowPicker" Header="流控制" HorizontalAlignment="Stretch" SelectionChanged="OnSelectionChanged"/>
+            </StackPanel>
+          </StackPanel>
+        </ScrollViewer>
+        <Button x:Name="ConnectButton" Grid.Row="1" Content="连接串口" Style="{ThemeResource AccentButtonStyle}" HorizontalAlignment="Stretch" Margin="0,20,0,0" Click="OnConnect">
+          <Button.KeyboardAccelerators><KeyboardAccelerator Key="K" Modifiers="Control" Invoked="OnConnectShortcut"/></Button.KeyboardAccelerators>
+        </Button>
+      </Grid>
+      <Grid Grid.Column="1" Padding="20,16" RowSpacing="12">
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <InfoBar x:Name="ErrorBar" IsOpen="False" Severity="Error" IsClosable="True"/>
+        <Grid Grid.Row="1" ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+          <StackPanel><TextBlock Text="数据终端" Style="{ThemeResource SubtitleTextBlockStyle}"/><TextBlock x:Name="FrameCount" Text="0 条记录 · ↓ RX 接收 / ↑ TX 发送" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/></StackPanel>
+          <ComboBox x:Name="DisplayPicker" Grid.Column="1" AutomationProperties.Name="显示编码" SelectionChanged="OnDisplayChanged" VerticalAlignment="Center"/>
+          <Button Grid.Column="2" Content="清空" Click="OnClear" VerticalAlignment="Center"><Button.KeyboardAccelerators><KeyboardAccelerator Key="L" Modifiers="Control" Invoked="OnClearShortcut"/></Button.KeyboardAccelerators></Button>
+        </Grid>
+        <Grid Grid.Row="2">
+          <ListView x:Name="Terminal" SelectionMode="None" ScrollViewer.HorizontalScrollMode="Disabled" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+            <ListView.ItemContainerStyle><Style TargetType="ListViewItem"><Setter Property="HorizontalContentAlignment" Value="Stretch"/></Style></ListView.ItemContainerStyle>
+            <ListView.ItemTemplate><DataTemplate x:DataType="local:TerminalFrame">
+              <Grid Padding="0,8" ColumnSpacing="16"><Grid.ColumnDefinitions><ColumnDefinition Width="108"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                <StackPanel Spacing="4"><TextBlock Text="{x:Bind Direction}" FontWeight="SemiBold"/><TextBlock Text="{x:Bind Time}" FontFamily="Consolas" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/><TextBlock Text="{x:Bind Size}" FontSize="12"/></StackPanel>
+                <TextBlock Grid.Column="1" Text="{x:Bind DisplayText, Mode=OneWay}" TextWrapping="Wrap" IsTextSelectionEnabled="True" FontFamily="Consolas"/>
+              </Grid>
+            </DataTemplate></ListView.ItemTemplate>
+          </ListView>
+          <StackPanel x:Name="EmptyState" VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="8"><FontIcon Glyph="&#xE968;" FontSize="32" HorizontalAlignment="Center"/><TextBlock x:Name="EmptyTitle" Text="连接串口后开始" Style="{ThemeResource SubtitleTextBlockStyle}"/><TextBlock Text="收发数据会实时显示在这里" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/></StackPanel>
+        </Grid>
+        <StackPanel Grid.Row="3" Spacing="12">
+          <Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+            <ComboBox x:Name="SendFormatPicker" Header="发送编码" SelectionChanged="OnSelectionChanged"/>
+            <ComboBox x:Name="EndingPicker" Grid.Column="1" Header="行尾" SelectionChanged="OnSelectionChanged"/>
+            <ToggleSwitch x:Name="AutoScrollToggle" Grid.Column="3" Header="自动滚动" OnContent="开" OffContent="关" Toggled="OnAutoScroll"/>
+          </Grid>
+          <Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+            <TextBox x:Name="InputBox" AcceptsReturn="True" TextWrapping="Wrap" Height="90" PlaceholderText="输入要发送的数据；HEX 示例：AA 01 FF" AutomationProperties.Name="要发送的数据" FontFamily="Consolas" TextChanged="OnInputChanged"/>
+            <Button x:Name="SendButton" Grid.Column="1" Content="发送" Style="{ThemeResource AccentButtonStyle}" VerticalAlignment="Bottom" Click="OnSend"><Button.KeyboardAccelerators><KeyboardAccelerator Key="Enter" Modifiers="Control" Invoked="OnSendShortcut"/></Button.KeyboardAccelerators></Button>
+          </Grid>
+        </StackPanel>
+      </Grid>
+    </Grid>
+    <Grid Grid.Row="2" Padding="20,8" Background="{ThemeResource LayerFillColorDefaultBrush}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock x:Name="ConnectionStatus" Text="未连接"/><TextBlock x:Name="ByteStatus" Grid.Column="1" Text="RX 0 B    TX 0 B" FontFamily="Consolas"/></Grid>
+  </Grid>
+</Window>

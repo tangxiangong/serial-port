@@ -1,39 +1,29 @@
-# CLAUDE.md
+# Serial Studio
 
-## Project Overview
-
-Serial Studio is a focused serial-port terminal for macOS. It uses Tauri 2
-(Rust) and SolidJS (TypeScript). Serial communication is the only transport;
-do not add BLE, networking, Modbus, or bridging without an explicit product
-decision.
-
-## Commands
-
-```bash
-bun install
-bun run build
-bun run tauri dev
-cargo check --manifest-path src-tauri/Cargo.toml
-cargo test --manifest-path src-tauri/Cargo.toml
-cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets
-bun run format
-```
-
-Use Bun for frontend dependency and script commands.
+Native desktop serial utility. Follow AGENTS.md and the user's instructions.
 
 ## Architecture
 
-- `src-tauri/src/serial/mod.rs`: single active serial session, split async
-  reader/writer, frame encoding, statistics, and Tauri events.
-- `src-tauri/src/serial/types.rs`: serial configuration and command/event DTOs.
-- `src-tauri/src/serial/hotplug.rs`: lightweight port-list change watcher.
-- `src-tauri/src/lib.rs`: five Tauri command boundaries only.
-- `src/stores/serial.ts`: frontend orchestration and typed event subscriptions.
-- `src/components/`: macOS-style connection, terminal, composer, toolbar, and
-  status views.
+- `crates/serial-studio-core`: serial transport, encoding and records.
+- `crates/serial-studio-service`: desktop runtime and serialized operations.
+- `crates/serial-studio-ffi`: UniFFI remote records and Swift exports.
+- `crates/serial-studio-csharp`: Interoptopus Wire exports and inventory.
+- `bindings/`: official generators; generated output is not source.
+- `macos/SerialStudio.xcodeproj`: SwiftUI + Sparkle; RustBindings dependency.
+- `windows/SerialStudio.sln`: WinUI + Velopack; MSBuild Rust targets.
+- `xtask/`, `ci/`: platform announcements, signed feeds and native packaging.
 
-Business rules and byte parsing stay in Rust. The frontend owns presentation,
-preferences, and bounded in-memory terminal history.
+## Checks
 
-Rust DTO fields use `#[serde(rename_all = "camelCase")]`; TypeScript interfaces
-must match them exactly. Async read and write paths must not hold the same lock.
+Start with targeted host-native logic/static checks. Do not add GUI automation tests.
+Use cargo fmt, targeted cargo test and cargo clippy as appropriate.
+Do not substitute macOS Windows/Linux cross-builds for native platform validation.
+Hardware, signing/notarization, installation and update acceptance are separate checks.
+
+## Development
+
+Open the Xcode project or VS solution directly. Both generate bindings before compiling.
+`script/build_and_run.sh` is the macOS build/run entrypoint.
+`windows/scripts/build.ps1` uses the same project graph as Visual Studio.
+Keep `macos/project.yml`, its generated project and shared scheme in sync.
+Do not restore Tauri, frontend package tooling, handwritten ABI declarations or JSON bridge dispatch.

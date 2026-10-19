@@ -1,9 +1,0 @@
-export { default as MoonIcon } from "./moon.svg";
-export { default as RefreshIcon } from "./refresh.svg";
-export { default as SendIcon } from "./send.svg";
-export { default as SerialIcon } from "./serial.svg";
-export { default as SunIcon } from "./sun.svg";
-export { default as TrashIcon } from "./trash.svg";
-export { default as UnplugIcon } from "./unplug.svg";
-export { default as XIcon } from "./x.svg";
-export { default as ZapIcon } from "./zap.svg";

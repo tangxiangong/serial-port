@@ -1,0 +1,77 @@
+name: Native release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: read
+concurrency:
+  group: serial-studio-release
+  cancel-in-progress: false
+jobs:
+  macos:
+    runs-on: macos-15
+    strategy:
+      matrix:
+        architecture: [arm64, x86_64]
+    env:
+      ARCH: ${{ matrix.architecture }}
+      SPARKLE_PUBLIC_ED_KEY: ${{ secrets.SPARKLE_PUBLIC_ED_KEY }}
+      SPARKLE_PRIVATE_ED_KEY: ${{ secrets.SPARKLE_PRIVATE_ED_KEY }}
+      BUILD_NUMBER: ${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+      - shell: bash
+        run: |
+          export APP_VERSION="${GITHUB_REF_NAME#v}"
+          ./ci/release-macos.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-macos-${{ matrix.architecture }}
+          path: dist/release/macos-${{ matrix.architecture }}/*
+          if-no-files-found: error
+  windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        architecture: [x64, ARM64]
+    env:
+      WINDOWS_UPDATE_PUBLIC_KEY: ${{ secrets.WINDOWS_UPDATE_PUBLIC_KEY }}
+      RELEASE_ARCH: ${{ matrix.architecture }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - uses: dtolnay/rust-toolchain@stable
+      - shell: pwsh
+        run: |
+          $Version = $env:GITHUB_REF_NAME.Substring(1)
+          $Channel = if ($Version -match '-alpha\.') { 'alpha' } elseif ($Version -match '-beta\.') { 'beta' } else { 'stable' }
+          ./windows/scripts/publish.ps1 -Architecture $env:RELEASE_ARCH -Version $Version -Channel $Channel -OutputDirectory "dist/release/windows-$($env:RELEASE_ARCH.ToLowerInvariant())"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-windows-${{ matrix.architecture }}
+          path: dist/release/windows-*/*
+          if-no-files-found: error
+  publish:
+    needs: [macos, windows]
+    runs-on: macos-15
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SPARKLE_PUBLIC_ED_KEY: ${{ secrets.SPARKLE_PUBLIC_ED_KEY }}
+      WINDOWS_UPDATE_PUBLIC_KEY: ${{ secrets.WINDOWS_UPDATE_PUBLIC_KEY }}
+      WINDOWS_UPDATE_PRIVATE_KEY: ${{ secrets.WINDOWS_UPDATE_PRIVATE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          path: dist/release/combined
+          merge-multiple: true
+      - run: python3 ci/publish.py "$GITHUB_REF_NAME" dist/release/combined

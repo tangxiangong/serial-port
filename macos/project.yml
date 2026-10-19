@@ -1,0 +1,67 @@
+name: SerialStudio
+options:
+  deploymentTarget:
+    macOS: "14.0"
+packages:
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    exactVersion: 2.10.0
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_IDENTITY: "-"
+    CODE_SIGNING_ALLOWED: YES
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+    SWIFT_INCLUDE_PATHS: "$(SRCROOT)/../bindings/generated/swift/include"
+targets:
+  SerialStudioCore:
+    type: framework
+    platform: macOS
+    sources:
+      - ../bindings/generated/swift/SerialStudioCore.swift
+    dependencies:
+      - target: RustBindings
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.tangxiangong.serialport.core
+        GENERATE_INFOPLIST_FILE: YES
+        OTHER_LDFLAGS: "$(inherited) $(SRCROOT)/../bindings/generated/swift/libserial_studio_ffi.a -framework IOKit -framework CoreFoundation"
+        SKIP_INSTALL: YES
+  SerialStudio:
+    type: application
+    platform: macOS
+    sources:
+      - SerialStudio/Sources/SerialStudio
+      - path: ../assets/icon.icns
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.tangxiangong.serialport
+        PRODUCT_NAME: SerialStudio
+        INFOPLIST_FILE: Info.plist
+        ENABLE_APP_SANDBOX: NO
+        ENABLE_HARDENED_RUNTIME: YES
+        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks"
+    dependencies:
+      - target: SerialStudioCore
+        embed: true
+      - package: Sparkle
+    scheme:
+      gatherCoverageData: false
+
+
+aggregateTargets:
+  RustBindings:
+    buildScripts:
+      - name: Build Rust and generate Swift bindings
+        script: bash "$SRCROOT/build-bindings.sh"
+        shell: /bin/bash
+        basedOnDependencyAnalysis: false
+        showEnvVars: false
+        outputFiles:
+          - "$(SRCROOT)/../bindings/generated/swift/SerialStudioCore.swift"
+          - "$(SRCROOT)/../bindings/generated/swift/include/SerialStudioCoreFFI.h"
+          - "$(SRCROOT)/../bindings/generated/swift/include/module.modulemap"
+          - "$(SRCROOT)/../bindings/generated/swift/libserial_studio_ffi.a"

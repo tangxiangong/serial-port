@@ -1,0 +1,4 @@
+[bindings.swift]
+module_name = "SerialStudioCore"
+ffi_module_name = "SerialStudioCoreFFI"
+generate_module_map = true

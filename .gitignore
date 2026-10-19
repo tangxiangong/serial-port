@@ -1,5 +1,11 @@
-node_modules
 dist
 .claude/settings.local.json
 .superpowers/
 .DS_Store
+target/
+bindings/generated/
+**/xcuserdata/
+windows/.vs/
+windows/**/bin/
+windows/**/obj/
+*.user

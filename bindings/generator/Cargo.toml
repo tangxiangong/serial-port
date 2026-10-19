@@ -1,0 +1,8 @@
+[package]
+name = "serial-studio-bindgen"
+version.workspace = true
+edition.workspace = true
+publish = false
+
+[dependencies]
+uniffi = { version = "0.32", features = ["cli"] }

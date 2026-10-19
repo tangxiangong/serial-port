@@ -1,0 +1,599 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXAggregateTarget section */
+		52F93C70E413C01542F7C481 /* RustBindings */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 3E72DB843CE2346CDE60883A /* Build configuration list for PBXAggregateTarget "RustBindings" */;
+			buildPhases = (
+				57004DD399C5F153F6E919AC /* Build Rust and generate Swift bindings */,
+			);
+			dependencies = (
+			);
+			name = RustBindings;
+			packageProductDependencies = (
+			);
+			productName = RustBindings;
+		};
+/* End PBXAggregateTarget section */
+
+/* Begin PBXBuildFile section */
+		27860F21F99CE05172A91D3B /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = ED6CBFE79A5C55B2E930BE7A /* Sparkle */; };
+		2E4699141D1F1733208E4B2F /* TerminalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD4AAFE91E6E6A2754EBABC9 /* TerminalView.swift */; };
+		39F3483CEA0B41AD00E23A46 /* SerialStudioCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0579A04C92441652F07457B0 /* SerialStudioCore.swift */; };
+		39F8C763711C2D399EEA26D9 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AE8A54DFFCC56C93BC14FEB /* Models.swift */; };
+		4D32A226D9FC69EBDADDCDA5 /* ConnectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 862E89C6A79631717397FAD4 /* ConnectionView.swift */; };
+		52ED4C144523FEBEDB2E3A8E /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2EF14F9D7B7180B0818E8DF /* ContentView.swift */; };
+		5CB03C7C58A5C4A09063526A /* SerialStudioCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 00D8F63FF8EC39FE0601C441 /* SerialStudioCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		73D23D74E80AA3D1A3D40165 /* icon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 03767856234BA24342C61FAB /* icon.icns */; };
+		8DC7570CC9208CCE627DD456 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE7AA29738FE3C7BA7065487 /* SettingsView.swift */; };
+		A522D39B32E35C139E69C806 /* SerialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B81649089D18BFD8566C482 /* SerialStore.swift */; };
+		B97AC64A200684FF373E514D /* RustCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECB3E6DE972507EB0D473490 /* RustCore.swift */; };
+		C84D950196524087963DB40D /* SerialStudioApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE2441D97B5A62D7D7CF204E /* SerialStudioApp.swift */; };
+		CC4B9139DE2EA0755DA2C6BE /* SerialStudioCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00D8F63FF8EC39FE0601C441 /* SerialStudioCore.framework */; };
+		D92AA806CA80EC3F29181875 /* Updater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77D3FB54E2D29DCC19242C1B /* Updater.swift */; };
+		E7C10707DAD886CB86718971 /* ComposerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C1710094C38FF8B32700DD /* ComposerView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		06B5C943D1B0DD119223C82D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 893D651EA05029198A979AD5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 52F93C70E413C01542F7C481;
+			remoteInfo = RustBindings;
+		};
+		AC33047D655DAF1A3B9D4D8B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 893D651EA05029198A979AD5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 69E2FD3D1A5E4249DBAD7819;
+			remoteInfo = SerialStudioCore;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		4FC1D0E4FAB0A152054A2EE3 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				5CB03C7C58A5C4A09063526A /* SerialStudioCore.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		00D8F63FF8EC39FE0601C441 /* SerialStudioCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = SerialStudioCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		03767856234BA24342C61FAB /* icon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = icon.icns; sourceTree = "<group>"; };
+		0579A04C92441652F07457B0 /* SerialStudioCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SerialStudioCore.swift; sourceTree = "<group>"; };
+		13C1710094C38FF8B32700DD /* ComposerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposerView.swift; sourceTree = "<group>"; };
+		6B81649089D18BFD8566C482 /* SerialStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SerialStore.swift; sourceTree = "<group>"; };
+		77D3FB54E2D29DCC19242C1B /* Updater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Updater.swift; sourceTree = "<group>"; };
+		862E89C6A79631717397FAD4 /* ConnectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionView.swift; sourceTree = "<group>"; };
+		8AE8A54DFFCC56C93BC14FEB /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		A2EF14F9D7B7180B0818E8DF /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		BD4AAFE91E6E6A2754EBABC9 /* TerminalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalView.swift; sourceTree = "<group>"; };
+		D2588A6AB3334B800E0B6716 /* SerialStudio.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SerialStudio.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DE2441D97B5A62D7D7CF204E /* SerialStudioApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SerialStudioApp.swift; sourceTree = "<group>"; };
+		ECB3E6DE972507EB0D473490 /* RustCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RustCore.swift; sourceTree = "<group>"; };
+		FE7AA29738FE3C7BA7065487 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		15B3BA9B25EB2D413C22F268 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CC4B9139DE2EA0755DA2C6BE /* SerialStudioCore.framework in Frameworks */,
+				27860F21F99CE05172A91D3B /* Sparkle in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		22C01269B3139A96BEBA1B65 /* SerialStudio */ = {
+			isa = PBXGroup;
+			children = (
+				13C1710094C38FF8B32700DD /* ComposerView.swift */,
+				862E89C6A79631717397FAD4 /* ConnectionView.swift */,
+				A2EF14F9D7B7180B0818E8DF /* ContentView.swift */,
+				8AE8A54DFFCC56C93BC14FEB /* Models.swift */,
+				ECB3E6DE972507EB0D473490 /* RustCore.swift */,
+				6B81649089D18BFD8566C482 /* SerialStore.swift */,
+				DE2441D97B5A62D7D7CF204E /* SerialStudioApp.swift */,
+				FE7AA29738FE3C7BA7065487 /* SettingsView.swift */,
+				BD4AAFE91E6E6A2754EBABC9 /* TerminalView.swift */,
+				77D3FB54E2D29DCC19242C1B /* Updater.swift */,
+			);
+			name = SerialStudio;
+			path = SerialStudio/Sources/SerialStudio;
+			sourceTree = "<group>";
+		};
+		C2BC363933471AAE3B653B61 /* swift */ = {
+			isa = PBXGroup;
+			children = (
+				0579A04C92441652F07457B0 /* SerialStudioCore.swift */,
+			);
+			name = swift;
+			path = ../bindings/generated/swift;
+			sourceTree = "<group>";
+		};
+		DC173FF20486764B9DFA2BAC /* assets */ = {
+			isa = PBXGroup;
+			children = (
+				03767856234BA24342C61FAB /* icon.icns */,
+			);
+			name = assets;
+			path = ../assets;
+			sourceTree = "<group>";
+		};
+		E545213C0705D9E35E7EEC9C /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D2588A6AB3334B800E0B6716 /* SerialStudio.app */,
+				00D8F63FF8EC39FE0601C441 /* SerialStudioCore.framework */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F6AB7946A675A8C6F710A08F = {
+			isa = PBXGroup;
+			children = (
+				DC173FF20486764B9DFA2BAC /* assets */,
+				22C01269B3139A96BEBA1B65 /* SerialStudio */,
+				C2BC363933471AAE3B653B61 /* swift */,
+				E545213C0705D9E35E7EEC9C /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		591A064FBCFA92992B38B47A /* SerialStudio */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B2C76F6E5AE2BFF697960955 /* Build configuration list for PBXNativeTarget "SerialStudio" */;
+			buildPhases = (
+				A1AD6E6A721897138D463C31 /* Sources */,
+				56A66598B7AA09864E17CF2C /* Resources */,
+				15B3BA9B25EB2D413C22F268 /* Frameworks */,
+				4FC1D0E4FAB0A152054A2EE3 /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				0E207AA903B53BD2B45451F6 /* PBXTargetDependency */,
+			);
+			name = SerialStudio;
+			packageProductDependencies = (
+				ED6CBFE79A5C55B2E930BE7A /* Sparkle */,
+			);
+			productName = SerialStudio;
+			productReference = D2588A6AB3334B800E0B6716 /* SerialStudio.app */;
+			productType = "com.apple.product-type.application";
+		};
+		69E2FD3D1A5E4249DBAD7819 /* SerialStudioCore */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 21937A2B4DBF1371A9AEEDC4 /* Build configuration list for PBXNativeTarget "SerialStudioCore" */;
+			buildPhases = (
+				FAF16DB5123D517D2BECCCB7 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B216287286E1BE029EA7A7A2 /* PBXTargetDependency */,
+			);
+			name = SerialStudioCore;
+			packageProductDependencies = (
+			);
+			productName = SerialStudioCore;
+			productReference = 00D8F63FF8EC39FE0601C441 /* SerialStudioCore.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		893D651EA05029198A979AD5 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = 38968AA42709F86122361B0B /* Build configuration list for PBXProject "SerialStudio" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = F6AB7946A675A8C6F710A08F;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				2F71FA1C9CB0B55AB81CDDC9 /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = E545213C0705D9E35E7EEC9C /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				69E2FD3D1A5E4249DBAD7819 /* SerialStudioCore */,
+				591A064FBCFA92992B38B47A /* SerialStudio */,
+				52F93C70E413C01542F7C481 /* RustBindings */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		56A66598B7AA09864E17CF2C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				73D23D74E80AA3D1A3D40165 /* icon.icns in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		57004DD399C5F153F6E919AC /* Build Rust and generate Swift bindings */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Build Rust and generate Swift bindings";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(SRCROOT)/../bindings/generated/swift/SerialStudioCore.swift",
+				"$(SRCROOT)/../bindings/generated/swift/include/SerialStudioCoreFFI.h",
+				"$(SRCROOT)/../bindings/generated/swift/include/module.modulemap",
+				"$(SRCROOT)/../bindings/generated/swift/libserial_studio_ffi.a",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "bash \"$SRCROOT/build-bindings.sh\"";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A1AD6E6A721897138D463C31 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E7C10707DAD886CB86718971 /* ComposerView.swift in Sources */,
+				4D32A226D9FC69EBDADDCDA5 /* ConnectionView.swift in Sources */,
+				52ED4C144523FEBEDB2E3A8E /* ContentView.swift in Sources */,
+				39F8C763711C2D399EEA26D9 /* Models.swift in Sources */,
+				B97AC64A200684FF373E514D /* RustCore.swift in Sources */,
+				A522D39B32E35C139E69C806 /* SerialStore.swift in Sources */,
+				C84D950196524087963DB40D /* SerialStudioApp.swift in Sources */,
+				8DC7570CC9208CCE627DD456 /* SettingsView.swift in Sources */,
+				2E4699141D1F1733208E4B2F /* TerminalView.swift in Sources */,
+				D92AA806CA80EC3F29181875 /* Updater.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FAF16DB5123D517D2BECCCB7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				39F3483CEA0B41AD00E23A46 /* SerialStudioCore.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		0E207AA903B53BD2B45451F6 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 69E2FD3D1A5E4249DBAD7819 /* SerialStudioCore */;
+			targetProxy = AC33047D655DAF1A3B9D4D8B /* PBXContainerItemProxy */;
+		};
+		B216287286E1BE029EA7A7A2 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 52F93C70E413C01542F7C481 /* RustBindings */;
+			targetProxy = 06B5C943D1B0DD119223C82D /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		3C1DCB3CBF186B3D1811E4D3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_INCLUDE_PATHS = "$(SRCROOT)/../bindings/generated/swift/include";
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		4BCB5EFA6A2D0773D2E6702B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_INCLUDE_PATHS = "$(SRCROOT)/../bindings/generated/swift/include";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		53FF856D7C5710D50070822C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				GENERATE_INFOPLIST_FILE = YES;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				OTHER_LDFLAGS = "$(inherited) $(SRCROOT)/../bindings/generated/swift/libserial_studio_ffi.a -framework IOKit -framework CoreFoundation";
+				PRODUCT_BUNDLE_IDENTIFIER = com.tangxiangong.serialport.core;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				VERSIONING_SYSTEM = "apple-generic";
+			};
+			name = Debug;
+		};
+		64F11362CE569BD89219EF5B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				GENERATE_INFOPLIST_FILE = YES;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				OTHER_LDFLAGS = "$(inherited) $(SRCROOT)/../bindings/generated/swift/libserial_studio_ffi.a -framework IOKit -framework CoreFoundation";
+				PRODUCT_BUNDLE_IDENTIFIER = com.tangxiangong.serialport.core;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				VERSIONING_SYSTEM = "apple-generic";
+			};
+			name = Release;
+		};
+		6BA90D01B277044F54792BCF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+			};
+			name = Debug;
+		};
+		94BEE3D76F5E00D0CB460936 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.tangxiangong.serialport;
+				PRODUCT_NAME = SerialStudio;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		A79E3FA887B52E6EA3D1C530 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+			};
+			name = Release;
+		};
+		E80D6BFAD70565B32C9882D6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.tangxiangong.serialport;
+				PRODUCT_NAME = SerialStudio;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		21937A2B4DBF1371A9AEEDC4 /* Build configuration list for PBXNativeTarget "SerialStudioCore" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				53FF856D7C5710D50070822C /* Debug */,
+				64F11362CE569BD89219EF5B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		38968AA42709F86122361B0B /* Build configuration list for PBXProject "SerialStudio" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4BCB5EFA6A2D0773D2E6702B /* Debug */,
+				3C1DCB3CBF186B3D1811E4D3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		3E72DB843CE2346CDE60883A /* Build configuration list for PBXAggregateTarget "RustBindings" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6BA90D01B277044F54792BCF /* Debug */,
+				A79E3FA887B52E6EA3D1C530 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		B2C76F6E5AE2BFF697960955 /* Build configuration list for PBXNativeTarget "SerialStudio" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				94BEE3D76F5E00D0CB460936 /* Debug */,
+				E80D6BFAD70565B32C9882D6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		2F71FA1C9CB0B55AB81CDDC9 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = exactVersion;
+				version = 2.10.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		ED6CBFE79A5C55B2E930BE7A /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2F71FA1C9CB0B55AB81CDDC9 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 893D651EA05029198A979AD5 /* Project object */;
+}

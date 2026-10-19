@@ -1,0 +1,9 @@
+[package]
+name = "serial-studio-csharp-bindgen"
+version.workspace = true
+edition.workspace = true
+publish = false
+
+[dependencies]
+serial-studio-csharp = { path = "../../crates/serial-studio-csharp" }
+interoptopus_csharp = "0.16"

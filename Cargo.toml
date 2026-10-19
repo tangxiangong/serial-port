@@ -1,0 +1,14 @@
+[workspace]
+members = ["crates/serial-studio-core", "crates/serial-studio-service", "crates/serial-studio-ffi", "crates/serial-studio-csharp", "bindings/generator", "bindings/csharp-generator", "xtask"]
+default-members = ["crates/serial-studio-core"]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/tangxiangong/serial-port"
+
+[profile.release]
+lto = "thin"
+strip = "debuginfo"
