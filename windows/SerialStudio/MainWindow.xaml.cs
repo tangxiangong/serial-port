@@ -3,6 +3,7 @@ using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using SerialStudio.Core;
 
@@ -16,7 +17,6 @@ public sealed partial class MainWindow : Window
     private readonly DispatcherQueueTimer timer;
     private SerialStatus status = new() { connected = false, path = null, config = null, rx_bytes = 0, tx_bytes = 0, opened_at = null, last_error = null };
     private bool busy, sending, polling, refreshing, updating = true, started, closed;
-    private bool? wideLayout;
     private int ticks, retainedBytes, connectionRevision;
     private static readonly string[] Formats = ["hex", "ascii", "gbk", "utf-8"];
     private static readonly string[] Endings = ["none", "lf", "cr", "crlf"];
@@ -27,7 +27,7 @@ public sealed partial class MainWindow : Window
         InitializeComponent();
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
-        AppWindow.Resize(new Windows.Graphics.SizeInt32(1360, 860));
+        AppWindow.Resize(new Windows.Graphics.SizeInt32(1180, 820));
         if (AppWindow.Presenter is OverlappedPresenter presenter)
         {
             presenter.PreferredMinimumWidth = 920;
@@ -101,7 +101,7 @@ public sealed partial class MainWindow : Window
             var choices = ports.Select(p => new PortChoice(p.path, p.display_name, p)).ToList();
             var selected = status.connected ? status.path : preferences.SelectedPath;
             if (status.connected && !choices.Any(p => p.Path == selected) && selected is not null) choices.Add(new(selected, selected + "（已移除）", null));
-            // Preserve native list selection and keyboard focus between hotplug scans.
+            // Preserve the selected device and keyboard focus between hotplug scans.
             if (PortPicker.ItemsSource is List<PortChoice> current && current.Count == choices.Count && current.Zip(choices).All(pair => SamePort(pair.First, pair.Second))) return;
             updating = true;
             PortPicker.ItemsSource = choices;
@@ -149,32 +149,32 @@ public sealed partial class MainWindow : Window
         foreach (var picker in new[] { BaudPicker, DataBitsPicker, StopBitsPicker, ParityPicker, FlowPicker })
             picker.IsEnabled = !busy && !status.connected;
         ConnectButton.IsEnabled = !busy && (status.connected || PortPicker.SelectedItem is PortChoice);
-        ConnectButton.Label = busy ? "正在处理…" : status.connected ? "断开连接" : "连接";
-        var connectionSymbol = status.connected ? Symbol.Stop : Symbol.Play;
-        if (ConnectButton.Icon is not SymbolIcon icon || icon.Symbol != connectionSymbol)
-            ConnectButton.Icon = new SymbolIcon(connectionSymbol);
+        ConnectLabel.Text = busy ? "正在处理…" : status.connected ? "断开连接" : "连接串口";
+        ConnectIcon.Symbol = status.connected ? Symbol.Stop : Symbol.Link;
         SendButton.IsEnabled = status.connected && !sending && !busy && InputBox.Text.Length > 0;
-        SendButton.Content = sending ? "发送中…" : "发送";
+        SendLabel.Text = sending ? "发送中…" : "发送";
+        InputCount.Text = InputBox.Text.Length == 0 ? "" : $"{new System.Globalization.StringInfo(InputBox.Text).LengthInTextElements:N0} 字符";
         EndingPicker.IsEnabled = SendFormatPicker.SelectedIndex != 0;
         InputBox.PlaceholderText = SendFormatPicker.SelectedIndex == 0 ? "十六进制数据，例如 AA 01 FF" : "输入文本或设备指令…";
         SendHint.Text = SendFormatPicker.SelectedIndex == 0 ? "HEX 按原始字节发送，不追加行尾。" : "Ctrl+Enter 发送 · Enter 换行";
         EmptyState.Visibility = visibleFrames.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         var filteredEmpty = frames.Count > 0 && visibleFrames.Count == 0;
-        EmptyTitle.Text = filteredEmpty ? "没有匹配的数据" : status.connected ? "等待设备数据" : "准备连接";
+        EmptyIcon.Glyph = filteredEmpty ? "\uE721" : "\uE756";
+        EmptyTitle.Text = filteredEmpty ? "没有匹配的数据" : status.connected ? "等待设备数据" : "暂无收发记录";
         EmptyDescription.Text = filteredEmpty ? "尝试其他搜索内容，或显示全部方向。"
-            : status.connected ? "收到的数据会实时出现在这里，也可以在下方发送指令。" : "选择串口，确认连接设置，然后点击“连接”。";
+            : status.connected ? "设备数据会实时显示在这里。" : "在左侧选择串口并连接，即可开始收发。";
         ResetFiltersButton.Visibility = filteredEmpty ? Visibility.Visible : Visibility.Collapsed;
         FrameCount.Text = TerminalSearch.Text.Length == 0 && DirectionPicker.SelectedIndex == 0
-            ? $"{frames.Count} 条记录" : $"{visibleFrames.Count} / {frames.Count} 条记录";
+            ? $"{frames.Count} 条" : $"{visibleFrames.Count}/{frames.Count} 条";
         ClearButton.IsEnabled = frames.Count > 0;
-        var selected = PortPicker.SelectedItem as PortChoice;
-        AppTitleBar.Subtitle = status.connected ? $"{status.path} · {preferences.BaudRate} baud" : selected?.DisplayName ?? "串口终端";
-        ConnectionStatus.Text = status.connected ? $"已连接 · {status.path} · {preferences.BaudRate} baud" : "未连接";
+        var parity = preferences.Parity switch { 1 => "O", 2 => "E", _ => "N" };
+        ConnectionStatus.Text = busy ? "正在处理…" : status.connected
+            ? $"已连接 · {status.path} · {preferences.BaudRate} · {preferences.DataBits}{parity}{preferences.StopBits}" : "未连接";
         ByteStatus.Text = $"RX {status.rx_bytes:N0} B    TX {status.tx_bytes:N0} B";
-        PortCount.Text = PortPicker.Items.Count.ToString();
-        DeviceEmptyState.Visibility = PortPicker.Items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        DeviceInfo.Visibility = PortPicker.SelectedItem is PortChoice { Info: not null } ? Visibility.Visible : Visibility.Collapsed;
         RefreshButton.IsEnabled = !refreshing;
-        ConfigHint.Text = busy ? "正在更改连接状态…" : status.connected ? "断开连接后可修改通信参数。" : "选择设备并确认通信参数。";
+        ConfigHint.Text = busy ? "正在更改连接状态…" : status.connected ? "断开连接后可修改参数。"
+            : PortPicker.Items.Count == 0 ? "接入设备后自动检测串口。" : "选择串口，连接后开始收发。";
         CheckUpdateButton.IsEnabled = Updater.CanCheck;
         ApplyUpdateButton.Visibility = string.IsNullOrEmpty(Updater.PendingVersion) ? Visibility.Collapsed : Visibility.Visible;
         ApplyUpdateButton.IsEnabled = !UpdateActivity.IsBusy;
@@ -184,7 +184,7 @@ public sealed partial class MainWindow : Window
         var port = (PortPicker.SelectedItem as PortChoice)?.Info;
         if (port is null)
         {
-            PortDetails.Text = status.connected ? "设备已移除，请断开后重新连接。" : "从左侧选择一个串口设备。";
+            PortDetails.Text = status.connected ? "设备已移除，请断开后重新连接。" : "选择串口后显示设备信息。";
             return;
         }
         var details = new List<string> { port.display_name, port.path };
@@ -261,20 +261,23 @@ public sealed partial class MainWindow : Window
         updating = false;
         RefreshTerminal(); RefreshState();
     }
-    private void OnInspector(object sender, RoutedEventArgs args)
-        => ConnectionInspector.IsPaneOpen = InspectorToggle.IsChecked == true;
-    private void OnInspectorPaneOpened(SplitView sender, object args)
-        => InspectorToggle.IsChecked = sender.IsPaneOpen;
-    private void OnInspectorPaneClosed(SplitView sender, object args)
-        => InspectorToggle.IsChecked = sender.IsPaneOpen;
+    private void OnComposerResize(object sender, DragDeltaEventArgs args)
+        => SetComposerHeight(ComposerRow.ActualHeight - args.VerticalChange);
+    private void OnSplitterKeyDown(object sender, KeyRoutedEventArgs args)
+    {
+        if (args.Key is not (Windows.System.VirtualKey.Up or Windows.System.VirtualKey.Down)) return;
+        SetComposerHeight(ComposerRow.ActualHeight + (args.Key == Windows.System.VirtualKey.Up ? 16 : -16));
+        args.Handled = true;
+    }
+    private void SetComposerHeight(double height)
+    {
+        var maximum = Math.Min(320, Math.Max(164, Workspace.ActualHeight - ErrorBar.ActualHeight - 185));
+        ComposerRow.Height = new GridLength(Math.Clamp(height, 164, maximum));
+    }
     private void OnRootSizeChanged(object sender, SizeChangedEventArgs args)
     {
-        if (ConnectionInspector is null || InspectorToggle is null || args.NewSize.Width <= 0) return;
-        var wide = args.NewSize.Width >= 1120;
-        if (wideLayout == wide) return;
-        wideLayout = wide;
-        ConnectionInspector.DisplayMode = wide ? SplitViewDisplayMode.Inline : SplitViewDisplayMode.Overlay;
-        if (!wide) { ConnectionInspector.IsPaneOpen = false; InspectorToggle.IsChecked = false; }
+        if (Workspace is not null && ComposerRow is not null && ErrorBar is not null && Workspace.ActualHeight > 0)
+            SetComposerHeight(ComposerRow.Height.Value);
     }
     private void ShowError(string message) { ErrorBar.Message = message; ErrorBar.IsOpen = true; }
     private void OnUpdaterChanged() { DispatcherQueue.TryEnqueue(RefreshState); }
@@ -313,12 +316,6 @@ public sealed partial class MainWindow : Window
     private void OnFindShortcut(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
     {
         args.Handled = true; TerminalSearch.Focus(FocusState.Programmatic); TerminalSearch.SelectAll();
-    }
-    private void OnInspectorShortcut(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
-    {
-        args.Handled = true;
-        ConnectionInspector.IsPaneOpen = !ConnectionInspector.IsPaneOpen;
-        InspectorToggle.IsChecked = ConnectionInspector.IsPaneOpen;
     }
     private void OnClosed(object sender, WindowEventArgs args)
     {

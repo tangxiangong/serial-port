@@ -2,116 +2,92 @@ import SwiftUI
 
 struct ContentView: View {
     @ObservedObject var serial: SerialStore
-    @SceneStorage("deviceSidebarVisible") private var showsDeviceSidebar = true
-    @SceneStorage("connectionInspectorVisible") private var showsConnectionInspector = true
-    @State private var showsInspectorPopover = false
+    @SceneStorage("composerHeight") private var composerHeight = 190.0
+    @State private var dragOrigin: Double?
 
     var body: some View {
-        GeometryReader { geometry in
-            let inspectorBinding = inspectorVisibility(width: geometry.size.width)
-            panes(width: geometry.size.width, topInset: geometry.safeAreaInsets.top)
-                .frame(width: geometry.size.width)
-                .clipped()
-                .navigationTitle("Serial Studio")
-                .navigationSubtitle(serial.status.connected
-                    ? "\(serial.status.path ?? "") · \((serial.status.config ?? serial.preferences.config).summary)"
-                    : serial.selectedPort?.displayName ?? "串口终端")
-                .toolbar {
-                    ToolbarItem(placement: .navigation) {
-                        Button {
-                            showsDeviceSidebar.toggle()
-                        } label: {
-                            Label("设备侧栏", systemImage: "sidebar.leading")
-                        }
-                        .help(showsDeviceSidebar ? "隐藏设备侧栏（⌥⌘S）" : "显示设备侧栏（⌥⌘S）")
-                        .accessibilityValue(showsDeviceSidebar ? "已显示" : "已隐藏")
-                    }
-                    ToolbarItem(placement: .primaryAction) {
-                        Button {
-                            Task { await serial.toggleConnection() }
-                        } label: {
-                            Label(serial.busy ? "正在处理…" : serial.status.connected ? "断开连接" : "连接",
-                                  systemImage: serial.status.connected ? "stop.fill" : "play.fill")
-                        }
-                        .labelStyle(.titleAndIcon)
-                        .disabled(serial.busy || (!serial.status.connected && serial.preferences.selectedPath.isEmpty))
-                        .help(serial.status.connected ? "断开连接（⌘K）" : "连接所选串口（⌘K）")
-                    }
-                    ToolbarItem(placement: .primaryAction) {
-                        Button {
-                            inspectorBinding.wrappedValue.toggle()
-                        } label: {
-                            Label("连接设置", systemImage: "sidebar.trailing")
-                        }
-                        .help(inspectorBinding.wrappedValue ? "隐藏连接设置（⌥⌘I）" : "显示连接设置（⌥⌘I）")
-                        .accessibilityValue(inspectorBinding.wrappedValue ? "已显示" : "已隐藏")
-                        .popover(isPresented: $showsInspectorPopover) {
-                            ConnectionInspectorView(serial: serial)
-                                .frame(width: 300, height: min(560, geometry.size.height))
-                        }
-                    }
-                }
-                .focusedSceneValue(\.serialConnectionInspector, inspectorBinding)
-                .onChange(of: geometry.size.width >= 1100) { _, wide in
-                    if wide { showsInspectorPopover = false }
-                }
-        }
-        .frame(minWidth: 840, minHeight: 600)
-        .focusedSceneValue(\.serialDeviceSidebar, $showsDeviceSidebar)
-    }
-
-    private func inspectorVisibility(width: CGFloat) -> Binding<Bool> {
-        width >= 1100 ? $showsConnectionInspector : $showsInspectorPopover
-    }
-
-    // Keep one native split container: NavigationSplitView + inspector causes a
-    // recurring window-constraint exception, even with the inspector on the root.
-    // AppKit-hosted columns need the title-bar inset forwarded to their content.
-    private func panes(width: CGFloat, topInset: CGFloat) -> some View {
-        HSplitView {
-            if showsDeviceSidebar {
-                ConnectionView(serial: serial)
-                    .padding(.top, topInset)
-                    .frame(minWidth: 190, idealWidth: 220, maxWidth: 260, maxHeight: .infinity)
-            }
-            workspace.padding(.top, topInset)
-                .frame(minWidth: 420, maxWidth: .infinity, maxHeight: .infinity)
-                .layoutPriority(1)
-            if showsConnectionInspector && width >= 1100 {
-                ConnectionInspectorView(serial: serial)
-                    .padding(.top, topInset)
-                    .frame(minWidth: 260, idealWidth: 280, maxWidth: 300, maxHeight: .infinity)
-            }
-        }
-    }
-
-    private var workspace: some View {
         VStack(spacing: 0) {
-            if let error = serial.error {
-                errorBanner(error)
+            HStack(spacing: 0) {
+                ConnectionView(serial: serial)
+                    .frame(width: 216)
                 Divider()
+                VStack(spacing: 0) {
+                    if let error = serial.error {
+                        errorBanner(error)
+                        Divider()
+                    }
+                    GeometryReader { geometry in
+                        let maximum = min(320.0, max(164.0, geometry.size.height - 188))
+                        let height = min(max(164.0, composerHeight), maximum)
+                        VStack(spacing: 0) {
+                            TerminalView(serial: serial)
+                                .frame(minHeight: 180, maxHeight: .infinity)
+                            resizeHandle(height: height, maximum: maximum)
+                            ComposerView(serial: serial)
+                                .frame(height: height)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            TerminalView(serial: serial)
-            Divider()
-            ComposerView(serial: serial)
             Divider()
             statusBar
         }
+        .frame(minWidth: 860, minHeight: 600)
+    }
+
+    private func resizeHandle(height: Double, maximum: Double) -> some View {
+        Rectangle()
+            .fill(.quaternary.opacity(0.5))
+            .frame(height: 8)
+            .overlay { Capsule().fill(.secondary).frame(width: 28, height: 2) }
+            .contentShape(Rectangle())
+            .gesture(DragGesture(minimumDistance: 0)
+                .onChanged { value in
+                    let origin = dragOrigin ?? height
+                    if dragOrigin == nil { dragOrigin = origin }
+                    composerHeight = min(max(164, origin - value.translation.height), maximum)
+                }
+                .onEnded { _ in dragOrigin = nil })
+            .focusable()
+            .onKeyPress(.upArrow) {
+                composerHeight = min(height + 16, maximum)
+                return .handled
+            }
+            .onKeyPress(.downArrow) {
+                composerHeight = max(164, height - 16)
+                return .handled
+            }
+            .accessibilityElement()
+            .accessibilityLabel("调整发送区高度")
+            .accessibilityValue("\(Int(height)) 点")
+            .accessibilityAdjustableAction { direction in
+                switch direction {
+                case .increment: composerHeight = min(height + 16, maximum)
+                case .decrement: composerHeight = max(164, height - 16)
+                @unknown default: break
+                }
+            }
+            .help("拖动调整收发区域；方向键微调")
     }
 
     private var statusBar: some View {
         HStack(spacing: 16) {
-            Label(serial.status.connected ? "已连接" : "未连接",
-                  systemImage: serial.status.connected ? "circle.inset.filled" : "circle")
-                .foregroundStyle(serial.status.connected ? .green : .secondary)
+            Label(serial.busy ? "正在处理…" : serial.status.connected ? "已连接" : "未连接",
+                  systemImage: serial.status.connected ? "checkmark.circle.fill" : "circle")
+                .foregroundStyle(serial.status.connected ? Color.green : Color.secondary)
+            if let path = serial.status.path, serial.status.connected {
+                Text(path).lineLimit(1).truncationMode(.middle)
+                Text((serial.status.config ?? serial.preferences.config).summary).lineLimit(1)
+            }
             Spacer(minLength: 8)
-            Text("RX \(serial.status.rxBytes.formatted()) B")
-            Text("TX \(serial.status.txBytes.formatted()) B")
+            Label("RX \(serial.status.rxBytes.formatted()) B", systemImage: "arrow.down.left")
+            Label("TX \(serial.status.txBytes.formatted()) B", systemImage: "arrow.up.right")
         }
-        .font(.caption.monospacedDigit())
+        .font(.system(size: 11, design: .monospaced))
         .foregroundStyle(.secondary)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
         .background(.bar)
         .accessibilityElement(children: .combine)
     }
@@ -134,29 +110,11 @@ struct ContentView: View {
     }
 }
 
-private struct SerialDeviceSidebarKey: FocusedValueKey {
-    typealias Value = Binding<Bool>
-}
-
-private struct SerialConnectionInspectorKey: FocusedValueKey {
-    typealias Value = Binding<Bool>
-}
-
 private struct SerialSearchRequestKey: FocusedValueKey {
     typealias Value = Binding<Bool>
 }
 
 extension FocusedValues {
-    var serialDeviceSidebar: Binding<Bool>? {
-        get { self[SerialDeviceSidebarKey.self] }
-        set { self[SerialDeviceSidebarKey.self] = newValue }
-    }
-
-    var serialConnectionInspector: Binding<Bool>? {
-        get { self[SerialConnectionInspectorKey.self] }
-        set { self[SerialConnectionInspectorKey.self] = newValue }
-    }
-
     var serialSearchRequested: Binding<Bool>? {
         get { self[SerialSearchRequestKey.self] }
         set { self[SerialSearchRequestKey.self] = newValue }

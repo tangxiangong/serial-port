@@ -18,66 +18,79 @@ struct TerminalView: View {
         let frames = visibleFrames
         VStack(spacing: 0) {
             HStack(spacing: 12) {
+                Label("接收区", systemImage: "text.alignleft")
+                    .font(.system(size: 13, weight: .semibold))
+                    .fixedSize()
+                Text(searchText.isEmpty && direction == .all
+                     ? "\(serial.frames.count) 条" : "\(frames.count)/\(serial.frames.count) 条")
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                Spacer(minLength: 0)
                 Picker("数据方向", selection: $direction) {
                     ForEach(TerminalDirection.allCases) { Text($0.rawValue).tag($0) }
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
-                .frame(width: 164)
-                Text(searchText.isEmpty && direction == .all
-                     ? "\(serial.frames.count) 条" : "\(frames.count) / \(serial.frames.count) 条")
-                    .font(.caption.monospacedDigit()).foregroundStyle(.secondary).lineLimit(1)
-                Spacer(minLength: 0)
-                Picker("显示编码", selection: $serial.preferences.displayFormat) {
-                    ForEach(DataFormat.allCases) { Text($0.title).tag($0) }
-                }
-                .labelsHidden().frame(width: 90)
+                .frame(width: 152)
+                TerminalSearchField(text: $searchText, focusRequested: $searchRequested)
+                    .frame(minWidth: 120, idealWidth: 180, maxWidth: 220)
+                    .help("搜索数据（⌘F）")
             }
             .controlSize(.small)
-            .padding(.horizontal, 12).padding(.vertical, 8)
-            .background(.bar)
+            .padding(.horizontal, 18)
+            .frame(height: 56)
             Divider()
             TerminalTable(frames: frames, format: serial.preferences.displayFormat, autoScroll: serial.preferences.autoScroll)
                 .overlay {
-                    if serial.frames.isEmpty {
-                        ContentUnavailableView {
-                            Label(serial.status.connected ? "等待设备数据" : "准备连接",
-                                  systemImage: serial.status.connected ? "waveform" : "terminal")
-                        } description: {
-                            Text(serial.status.connected ? "收到的数据会实时出现在这里，也可以在下方发送指令。" : "选择串口，确认连接设置，然后点击工具栏中的“连接”。")
-                        }
-                    } else if frames.isEmpty {
-                        ContentUnavailableView {
-                            Label("没有匹配的数据", systemImage: "magnifyingglass")
-                        } description: {
-                            Text("尝试其他搜索内容，或显示全部方向。")
-                        } actions: {
-                            Button("清除筛选") { searchText = ""; direction = .all }
-                        }
-                    }
+                    if frames.isEmpty { emptyState(filtered: !serial.frames.isEmpty) }
                 }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .focusedSceneValue(\.serialSearchRequested, $searchRequested)
-        .toolbar {
-            ToolbarItem {
-                TerminalSearchField(text: $searchText, focusRequested: $searchRequested)
-                    .frame(width: 170)
-                    .help("搜索数据（⌘F）")
-            }
-            ToolbarItemGroup {
+            Divider()
+            HStack(spacing: 12) {
+                Picker("接收编码", selection: $serial.preferences.displayFormat) {
+                    ForEach(DataFormat.allCases) { Text($0.title).tag($0) }
+                }
+                .frame(width: 160)
+                Spacer(minLength: 12)
                 Toggle(isOn: $serial.preferences.autoScroll) {
                     Label("自动滚动", systemImage: "arrow.down.to.line")
                 }
                 .toggleStyle(.button)
                 .help(serial.preferences.autoScroll ? "关闭自动滚动" : "滚动到最新数据")
                 Button(action: serial.clear) {
-                    Label("清空终端", systemImage: "trash")
+                    Label("清屏", systemImage: "trash")
                 }
                 .disabled(serial.frames.isEmpty)
                 .help("清空终端（⌘L）")
             }
+            .controlSize(.small)
+            .padding(.horizontal, 18)
+            .frame(height: 44)
+            .background(.bar)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(.background)
+        .focusedSceneValue(\.serialSearchRequested, $searchRequested)
+    }
+
+    private func emptyState(filtered: Bool) -> some View {
+        VStack(spacing: 12) {
+            Image(systemName: filtered ? "magnifyingglass" : "terminal")
+                .font(.system(size: 32, weight: .light))
+                .foregroundStyle(.tertiary)
+                .accessibilityHidden(true)
+            Text(filtered ? "没有匹配的数据" : serial.status.connected ? "等待设备数据" : "暂无收发记录")
+                .font(.system(size: 14, weight: .medium))
+            Text(filtered ? "尝试其他搜索内容，或显示全部方向。" : serial.status.connected ? "设备数据会实时显示在这里。" : "在左侧选择串口并连接，即可开始收发。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            if filtered {
+                Button("清除筛选") { searchText = ""; direction = .all }
+                    .controlSize(.small)
+            }
+        }
+        .padding(24)
     }
 }
 
@@ -99,16 +112,17 @@ private struct TerminalTable: NSViewRepresentable {
         table.delegate = context.coordinator
         table.dataSource = context.coordinator
         table.style = .fullWidth
-        table.usesAlternatingRowBackgroundColors = true
-        table.usesAutomaticRowHeights = true
-        table.rowHeight = 24
+        table.usesAlternatingRowBackgroundColors = false
+        table.usesAutomaticRowHeights = false
+        table.rowHeight = 30
+        table.intercellSpacing = NSSize(width: 12, height: 2)
         table.allowsMultipleSelection = true
         table.columnAutoresizingStyle = .lastColumnOnlyAutoresizingStyle
         table.autoresizingMask = [.width]
         table.setAccessibilityLabel("串口数据终端")
         for (name, title, width, minimum) in [
             ("time", "时间", 104.0, 88.0),
-            ("direction", "方向", 52.0, 44.0),
+            ("direction", "方向", 64.0, 60.0),
             ("size", "字节", 52.0, 40.0),
             ("data", "数据", 260.0, 120.0)
         ] {
@@ -171,6 +185,17 @@ private struct TerminalTable: NSViewRepresentable {
 
         func numberOfRows(in tableView: NSTableView) -> Int { frames.count }
 
+        func tableView(_ tableView: NSTableView, heightOfRow row: Int) -> CGFloat {
+            guard frames.indices.contains(row), let column = tableView.tableColumns.last else { return 30 }
+            let text = frames[row].display(format).trimmingCharacters(in: .newlines)
+            let bounds = (text as NSString).boundingRect(
+                with: NSSize(width: max(1, column.width - 8), height: .greatestFiniteMagnitude),
+                options: [.usesLineFragmentOrigin, .usesFontLeading],
+                attributes: [.font: NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)]
+            )
+            return max(30, ceil(bounds.height) + 6)
+        }
+
         func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
             guard frames.indices.contains(row), let column = tableColumn else { return nil }
             let cell: NSTableCellView
@@ -180,7 +205,7 @@ private struct TerminalTable: NSViewRepresentable {
                 cell = NSTableCellView()
                 cell.identifier = column.identifier
                 let text = NSTextField(wrappingLabelWithString: "")
-                text.font = .monospacedSystemFont(ofSize: NSFont.smallSystemFontSize, weight: .regular)
+                text.font = .monospacedSystemFont(ofSize: column.identifier.rawValue == "data" ? 13 : 11, weight: .regular)
                 text.isSelectable = true
                 text.translatesAutoresizingMaskIntoConstraints = false
                 if column.identifier.rawValue != "data" { text.maximumNumberOfLines = 1 }
@@ -188,18 +213,36 @@ private struct TerminalTable: NSViewRepresentable {
                 cell.addSubview(text)
                 cell.textField = text
                 NSLayoutConstraint.activate([
-                    text.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 4),
+                    text.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: column.identifier.rawValue == "direction" ? 20 : 4),
                     text.trailingAnchor.constraint(equalTo: cell.trailingAnchor, constant: -4),
                     text.topAnchor.constraint(equalTo: cell.topAnchor, constant: 3),
                     text.bottomAnchor.constraint(equalTo: cell.bottomAnchor, constant: -3)
                 ])
+                if column.identifier.rawValue == "direction" {
+                    let icon = NSImageView()
+                    icon.translatesAutoresizingMaskIntoConstraints = false
+                    icon.contentTintColor = .controlAccentColor
+                    cell.addSubview(icon)
+                    cell.imageView = icon
+                    NSLayoutConstraint.activate([
+                        icon.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 2),
+                        icon.topAnchor.constraint(equalTo: cell.topAnchor, constant: 4),
+                        icon.widthAnchor.constraint(equalToConstant: 12),
+                        icon.heightAnchor.constraint(equalToConstant: 12)
+                    ])
+                }
             }
             let frame = frames[row]
+            cell.textField?.textColor = column.identifier.rawValue == "data" || column.identifier.rawValue == "direction"
+                ? .labelColor : .secondaryLabelColor
             switch column.identifier.rawValue {
             case "time": cell.textField?.stringValue = frame.time
-            case "direction": cell.textField?.stringValue = frame.isReceive ? "↓ RX" : "↑ TX"
+            case "direction":
+                cell.textField?.stringValue = frame.isReceive ? "RX" : "TX"
+                cell.imageView?.image = NSImage(systemSymbolName: frame.isReceive ? "arrow.down.left" : "arrow.up.right",
+                                               accessibilityDescription: frame.isReceive ? "接收" : "发送")
             case "size": cell.textField?.stringValue = String(frame.bytes.count)
-            default: cell.textField?.stringValue = frame.display(format)
+            default: cell.textField?.stringValue = frame.display(format).trimmingCharacters(in: .newlines)
             }
             return cell
         }

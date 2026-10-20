@@ -14,254 +14,301 @@
       <KeyboardAccelerator Key="R" Modifiers="Control" Invoked="OnRefreshShortcut" />
       <KeyboardAccelerator Key="L" Modifiers="Control" Invoked="OnClearShortcut" />
       <KeyboardAccelerator Key="F" Modifiers="Control" Invoked="OnFindShortcut" />
-      <KeyboardAccelerator Key="I" Modifiers="Control" Invoked="OnInspectorShortcut" />
     </Grid.KeyboardAccelerators>
     <Grid.RowDefinitions>
-      <RowDefinition Height="Auto" />
       <RowDefinition Height="Auto" />
       <RowDefinition Height="*" />
       <RowDefinition Height="Auto" />
     </Grid.RowDefinitions>
-
-    <TitleBar x:Name="AppTitleBar" Title="Serial Studio" Subtitle="串口终端">
+    <TitleBar x:Name="AppTitleBar" Title="Serial Studio">
       <TitleBar.IconSource>
         <FontIconSource Glyph="&#xE756;" />
       </TitleBar.IconSource>
     </TitleBar>
 
-    <CommandBar Grid.Row="1" DefaultLabelPosition="Right" Background="Transparent">
-      <CommandBar.Content>
-        <TextBlock x:Name="FrameCount" Text="0 条记录" Margin="16,0" VerticalAlignment="Center"
-                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-      </CommandBar.Content>
-      <AppBarButton x:Name="ConnectButton" Label="连接" Icon="Play" Click="OnConnect" ToolTipService.ToolTip="连接或断开串口 (Ctrl+K)" />
-      <AppBarSeparator />
-      <AppBarToggleButton x:Name="AutoScrollToggle" Label="自动滚动" Icon="Download" IsChecked="True"
-                          Click="OnAutoScroll" ToolTipService.ToolTip="跟随最新的数据" />
-      <AppBarButton x:Name="ClearButton" Label="清空终端" Icon="Delete" Click="OnClear"
-                    ToolTipService.ToolTip="清空终端 (Ctrl+L)" />
-      <AppBarSeparator />
-      <AppBarToggleButton x:Name="InspectorToggle" Label="连接设置" Icon="Setting" IsChecked="True"
-                          Click="OnInspector" ToolTipService.ToolTip="显示或隐藏连接设置 (Ctrl+I)" />
-      <CommandBar.SecondaryCommands>
-        <AppBarButton x:Name="CheckUpdateButton" Label="检查更新" Icon="Download" Click="OnCheckUpdate" />
-        <AppBarButton x:Name="ApplyUpdateButton" Label="安装更新" Icon="Refresh" Click="OnApplyUpdate" Visibility="Collapsed" />
-      </CommandBar.SecondaryCommands>
-    </CommandBar>
-
-    <Grid Grid.Row="2">
+    <Grid Grid.Row="1" BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}" BorderThickness="0,1,0,1">
       <Grid.ColumnDefinitions>
         <ColumnDefinition Width="216" />
         <ColumnDefinition Width="*" />
       </Grid.ColumnDefinitions>
 
-      <Grid RowSpacing="8">
+      <Grid BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}" BorderThickness="0,0,1,0">
         <Grid.RowDefinitions>
-          <RowDefinition Height="Auto" />
+          <RowDefinition Height="56" />
           <RowDefinition Height="*" />
           <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <Grid Margin="8,8,4,4">
+        <Border BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}" BorderThickness="0,0,0,1" Padding="18,0">
+          <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            <FontIcon Glyph="&#xE88E;" FontSize="16" />
+            <TextBlock Text="串口设置" FontSize="14" FontWeight="SemiBold" AutomationProperties.HeadingLevel="Level2" />
+          </StackPanel>
+        </Border>
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+          <StackPanel Padding="18" Spacing="18">
+            <Grid ColumnSpacing="6">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="32" />
+              </Grid.ColumnDefinitions>
+              <ComboBox x:Name="PortPicker" Header="串口设备" PlaceholderText="未发现串口" HorizontalAlignment="Stretch"
+                        AutomationProperties.Name="串口设备" SelectionChanged="OnSelectionChanged">
+                <ComboBox.ItemTemplate>
+                  <DataTemplate>
+                    <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis"
+                               ToolTipService.ToolTip="{Binding Path}" />
+                  </DataTemplate>
+                </ComboBox.ItemTemplate>
+              </ComboBox>
+              <Button x:Name="RefreshButton" Grid.Column="1" VerticalAlignment="Bottom" Width="32" Height="32"
+                      Padding="0" Click="OnRefresh" Background="Transparent" BorderThickness="0"
+                      AutomationProperties.Name="刷新串口" ToolTipService.ToolTip="刷新串口 (Ctrl+R)">
+                <SymbolIcon Symbol="Refresh" />
+              </Button>
+            </Grid>
+            <ComboBox x:Name="BaudPicker" Header="波特率" HorizontalAlignment="Stretch" SelectionChanged="OnSelectionChanged" />
+            <Grid ColumnSpacing="12">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <ComboBox x:Name="DataBitsPicker" Header="数据位" HorizontalAlignment="Stretch" SelectionChanged="OnSelectionChanged" />
+              <ComboBox x:Name="StopBitsPicker" Grid.Column="1" Header="停止位" HorizontalAlignment="Stretch" SelectionChanged="OnSelectionChanged" />
+            </Grid>
+            <ComboBox x:Name="ParityPicker" Header="校验位" HorizontalAlignment="Stretch" SelectionChanged="OnSelectionChanged" />
+            <ComboBox x:Name="FlowPicker" Header="流控制" HorizontalAlignment="Stretch" SelectionChanged="OnSelectionChanged" />
+            <Button x:Name="ConnectButton" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                    Style="{ThemeResource AccentButtonStyle}" Click="OnConnect"
+                    ToolTipService.ToolTip="连接或断开串口 (Ctrl+K)">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <SymbolIcon x:Name="ConnectIcon" Symbol="Link" />
+                <TextBlock x:Name="ConnectLabel" Text="连接串口" />
+              </StackPanel>
+            </Button>
+            <TextBlock x:Name="ConfigHint" Text="接入设备后自动检测串口。" FontSize="12" TextWrapping="Wrap"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            <Expander x:Name="DeviceInfo" Header="设备信息" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+              <TextBlock x:Name="PortDetails" TextWrapping="Wrap" IsTextSelectionEnabled="True" FontSize="12"
+                         Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            </Expander>
+          </StackPanel>
+        </ScrollViewer>
+        <Grid Grid.Row="2" Padding="18,12" ColumnSpacing="12">
           <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="Auto" />
           </Grid.ColumnDefinitions>
-          <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-            <TextBlock Text="串口设备" FontWeight="SemiBold" AutomationProperties.HeadingLevel="Level2" />
-            <TextBlock x:Name="PortCount" Text="0" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-          </StackPanel>
-          <Button x:Name="RefreshButton" Grid.Column="1" Click="OnRefresh" Background="Transparent" BorderThickness="0"
-                  AutomationProperties.Name="刷新串口" ToolTipService.ToolTip="刷新串口 (Ctrl+R)">
-            <FontIcon Glyph="&#xE72C;" FontSize="14" />
+          <Button Click="OnSettings" Background="Transparent" BorderThickness="0" Padding="6"
+                  AutomationProperties.Name="设置" ToolTipService.ToolTip="设置">
+            <SymbolIcon Symbol="Setting" />
+          </Button>
+          <TextBlock Grid.Column="1" Text="Serial Studio" FontSize="12" VerticalAlignment="Center"
+                     Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+          <Button Grid.Column="2" Background="Transparent" BorderThickness="0" Padding="6"
+                  AutomationProperties.Name="软件更新" ToolTipService.ToolTip="软件更新">
+            <SymbolIcon Symbol="More" />
+            <Button.Flyout>
+              <MenuFlyout>
+                <MenuFlyoutItem x:Name="CheckUpdateButton" Text="检查更新" Icon="Download" Click="OnCheckUpdate" />
+                <MenuFlyoutItem x:Name="ApplyUpdateButton" Text="安装更新" Icon="Refresh" Click="OnApplyUpdate" Visibility="Collapsed" />
+              </MenuFlyout>
+            </Button.Flyout>
           </Button>
         </Grid>
-        <Grid Grid.Row="1">
-          <ListView x:Name="PortPicker" SelectionMode="Single" SelectionChanged="OnSelectionChanged"
-                    AutomationProperties.Name="串口设备" Background="Transparent"
-                    ScrollViewer.HorizontalScrollMode="Disabled" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-            <ListView.ItemContainerStyle>
-              <Style TargetType="ListViewItem">
-                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-              </Style>
-            </ListView.ItemContainerStyle>
-            <ListView.ItemTemplate>
-              <DataTemplate>
-                <Grid ColumnSpacing="12">
-                  <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="20" />
-                    <ColumnDefinition Width="*" />
-                  </Grid.ColumnDefinitions>
-                  <FontIcon Glyph="&#xE88E;" FontSize="18" VerticalAlignment="Center" />
-                  <StackPanel Grid.Column="1" Spacing="3">
-                    <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis" />
-                    <TextBlock Text="{Binding Path}" FontSize="12" TextTrimming="CharacterEllipsis"
-                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                  </StackPanel>
-                </Grid>
-              </DataTemplate>
-            </ListView.ItemTemplate>
-          </ListView>
-          <StackPanel x:Name="DeviceEmptyState" VerticalAlignment="Center" Margin="16" Spacing="10">
-            <FontIcon Glyph="&#xE88E;" FontSize="28" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-            <TextBlock Text="未发现设备" FontWeight="SemiBold" HorizontalAlignment="Center" />
-            <TextBlock Text="接入串口设备后，会自动显示在这里。" TextWrapping="Wrap" TextAlignment="Center"
-                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-          </StackPanel>
-        </Grid>
-        <Button Grid.Row="2" Click="OnSettings" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
-                Background="Transparent" BorderThickness="0" Margin="0,8,0,4">
-          <StackPanel Orientation="Horizontal" Spacing="12">
-            <FontIcon Glyph="&#xE713;" FontSize="16" />
-            <TextBlock Text="设置" />
-          </StackPanel>
-        </Button>
       </Grid>
 
-      <Border Grid.Column="1" Background="{ThemeResource LayerFillColorDefaultBrush}"
-              BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}" BorderThickness="1,0,0,0">
-        <SplitView x:Name="ConnectionInspector" PanePlacement="Right" DisplayMode="Inline" IsPaneOpen="True"
-                   OpenPaneLength="272" PaneBackground="{ThemeResource LayerFillColorDefaultBrush}"
-                   PaneOpened="OnInspectorPaneOpened" PaneClosed="OnInspectorPaneClosed">
-          <SplitView.Pane>
-            <Border BorderThickness="1,0,0,0" BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}">
-              <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-                <StackPanel Padding="20" Spacing="20">
-                  <TextBlock Text="连接设置" Style="{ThemeResource SubtitleTextBlockStyle}" AutomationProperties.HeadingLevel="Level2" />
-                  <TextBlock x:Name="ConfigHint" Text="选择设备并确认通信参数。" TextWrapping="Wrap" FontSize="12"
-                             Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                  <StackPanel x:Name="ConfigPanel" Spacing="16">
-                    <ComboBox x:Name="BaudPicker" Header="波特率" HorizontalAlignment="Stretch" SelectionChanged="OnSelectionChanged" />
-                    <Grid ColumnSpacing="12">
-                      <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                      </Grid.ColumnDefinitions>
-                      <ComboBox x:Name="DataBitsPicker" Header="数据位" HorizontalAlignment="Stretch" SelectionChanged="OnSelectionChanged" />
-                      <ComboBox x:Name="StopBitsPicker" Grid.Column="1" Header="停止位" HorizontalAlignment="Stretch" SelectionChanged="OnSelectionChanged" />
-                    </Grid>
-                    <ComboBox x:Name="ParityPicker" Header="校验位" HorizontalAlignment="Stretch" SelectionChanged="OnSelectionChanged" />
-                    <ComboBox x:Name="FlowPicker" Header="流控制" HorizontalAlignment="Stretch" SelectionChanged="OnSelectionChanged" />
-                  </StackPanel>
-                  <Border Height="1" Background="{ThemeResource DividerStrokeColorDefaultBrush}" />
-                  <TextBlock Text="设备信息" FontWeight="SemiBold" AutomationProperties.HeadingLevel="Level3" />
-                  <TextBlock x:Name="PortDetails" Text="从左侧选择一个串口设备。" TextWrapping="Wrap"
-                             IsTextSelectionEnabled="True" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                </StackPanel>
-              </ScrollViewer>
-            </Border>
-          </SplitView.Pane>
+      <Grid x:Name="Workspace" Grid.Column="1" Background="{ThemeResource LayerFillColorDefaultBrush}">
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="*" MinHeight="180" />
+          <RowDefinition Height="5" />
+          <RowDefinition x:Name="ComposerRow" Height="190" MinHeight="164" />
+        </Grid.RowDefinitions>
+        <InfoBar x:Name="ErrorBar" IsOpen="False" Severity="Error" IsClosable="True" SizeChanged="OnRootSizeChanged" />
 
-          <Grid>
+        <Grid Grid.Row="1">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="56" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="44" />
+          </Grid.RowDefinitions>
+          <Grid Padding="18,0" ColumnSpacing="12" BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}" BorderThickness="0,0,0,1">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="180" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+              <SymbolIcon Symbol="AlignLeft" />
+              <TextBlock Text="接收区" FontSize="13" FontWeight="SemiBold" AutomationProperties.HeadingLevel="Level2" />
+            </StackPanel>
+            <TextBlock x:Name="FrameCount" Grid.Column="1" Text="0 条" FontSize="12" VerticalAlignment="Center"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            <ComboBox x:Name="DirectionPicker" Grid.Column="3" SelectedIndex="0" Width="112" VerticalAlignment="Center"
+                      AutomationProperties.Name="数据方向" SelectionChanged="OnFilterChanged">
+              <ComboBoxItem Content="全部" />
+              <ComboBoxItem Content="接收 RX" />
+              <ComboBoxItem Content="发送 TX" />
+            </ComboBox>
+            <TextBox x:Name="TerminalSearch" Grid.Column="4" PlaceholderText="搜索数据" VerticalAlignment="Center"
+                     AutomationProperties.Name="搜索终端数据" ToolTipService.ToolTip="搜索数据 (Ctrl+F)" TextChanged="OnSearchChanged" />
+          </Grid>
+
+          <Grid Grid.Row="1">
             <Grid.RowDefinitions>
               <RowDefinition Height="Auto" />
-              <RowDefinition Height="Auto" />
               <RowDefinition Height="*" />
-              <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-            <InfoBar x:Name="ErrorBar" IsOpen="False" Severity="Error" IsClosable="True" Margin="12,12,12,0" />
-            <Grid Grid.Row="1" Padding="12,8" ColumnSpacing="12">
+            <Grid Padding="18,8" ColumnSpacing="12" Background="{ThemeResource SubtleFillColorSecondaryBrush}">
               <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="100" />
+                <ColumnDefinition Width="64" />
+                <ColumnDefinition Width="48" />
                 <ColumnDefinition Width="*" />
               </Grid.ColumnDefinitions>
-              <ComboBox x:Name="DirectionPicker" SelectedIndex="0" MinWidth="100" VerticalAlignment="Center"
-                        AutomationProperties.Name="数据方向" SelectionChanged="OnFilterChanged">
-                <ComboBoxItem Content="全部方向" />
-                <ComboBoxItem Content="接收 RX" />
-                <ComboBoxItem Content="发送 TX" />
-              </ComboBox>
-              <ComboBox x:Name="DisplayPicker" Grid.Column="1" MinWidth="88" VerticalAlignment="Center"
-                        AutomationProperties.Name="显示编码" SelectionChanged="OnDisplayChanged" />
-              <TextBox x:Name="TerminalSearch" Grid.Column="2" PlaceholderText="搜索数据 (Ctrl+F)" AutomationProperties.Name="搜索终端数据"
-                       TextChanged="OnSearchChanged" />
+              <TextBlock Text="时间" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+              <TextBlock Grid.Column="1" Text="方向" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+              <TextBlock Grid.Column="2" Text="字节" FontSize="12" HorizontalAlignment="Right" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+              <TextBlock Grid.Column="3" Text="数据" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
             </Grid>
-
-            <Grid Grid.Row="2">
-              <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-              </Grid.RowDefinitions>
-              <Border BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}" BorderThickness="0,1">
-                <Grid Padding="16,7" ColumnSpacing="12">
-                  <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="92" />
-                    <ColumnDefinition Width="40" />
-                    <ColumnDefinition Width="44" />
-                    <ColumnDefinition Width="*" />
-                  </Grid.ColumnDefinitions>
-                  <TextBlock Text="时间" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                  <TextBlock Grid.Column="1" Text="方向" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                  <TextBlock Grid.Column="2" Text="字节" FontSize="12" HorizontalAlignment="Right" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                  <TextBlock Grid.Column="3" Text="数据" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                </Grid>
-              </Border>
-              <ListView x:Name="Terminal" Grid.Row="1" SelectionMode="Extended" AutomationProperties.Name="串口数据终端"
-                        Background="{ThemeResource ControlAltFillColorQuarternaryBrush}"
-                        ScrollViewer.HorizontalScrollMode="Disabled" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                <ListView.ItemContainerStyle>
-                  <Style TargetType="ListViewItem">
-                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                    <Setter Property="Padding" Value="16,7" />
-                    <Setter Property="MinHeight" Value="30" />
-                  </Style>
-                </ListView.ItemContainerStyle>
-                <ListView.ItemTemplate>
-                  <DataTemplate x:DataType="local:TerminalFrame">
-                    <Grid ColumnSpacing="12">
-                      <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="92" />
-                        <ColumnDefinition Width="40" />
-                        <ColumnDefinition Width="44" />
-                        <ColumnDefinition Width="*" />
-                      </Grid.ColumnDefinitions>
-                      <TextBlock Text="{x:Bind Time}" FontFamily="Consolas" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                      <TextBlock Grid.Column="1" Text="{x:Bind Direction}" FontFamily="Consolas" FontSize="12" FontWeight="SemiBold" />
-                      <TextBlock Grid.Column="2" Text="{x:Bind Size}" FontFamily="Consolas" FontSize="12" HorizontalAlignment="Right"
-                                 Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                      <TextBlock Grid.Column="3" Text="{x:Bind DisplayText, Mode=OneWay}" TextWrapping="Wrap" IsTextSelectionEnabled="True"
-                                 FontFamily="Consolas" FontSize="13" />
-                    </Grid>
-                  </DataTemplate>
-                </ListView.ItemTemplate>
-              </ListView>
-              <StackPanel x:Name="EmptyState" Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="12" Margin="24" MaxWidth="320">
-                <FontIcon Glyph="&#xE756;" FontSize="36" HorizontalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                <TextBlock x:Name="EmptyTitle" Text="准备连接" Style="{ThemeResource SubtitleTextBlockStyle}" HorizontalAlignment="Center" />
-                <TextBlock x:Name="EmptyDescription" Text="选择串口，确认连接设置，然后点击“连接”。" TextWrapping="Wrap" TextAlignment="Center"
-                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                <Button x:Name="ResetFiltersButton" Content="清除筛选" Click="OnResetFilters" HorizontalAlignment="Center" Visibility="Collapsed" />
-              </StackPanel>
-            </Grid>
-
-            <Border Grid.Row="3" BorderThickness="0,1,0,0" BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}">
-              <StackPanel Padding="12" Spacing="8">
-                <TextBox x:Name="InputBox" AcceptsReturn="True" TextWrapping="Wrap" Height="80" PlaceholderText="输入文本或设备指令…"
-                         AutomationProperties.Name="要发送的数据" FontFamily="Consolas" TextChanged="OnInputChanged" />
-                <Grid ColumnSpacing="12">
-                  <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                  </Grid.ColumnDefinitions>
-                  <ComboBox x:Name="SendFormatPicker" MinWidth="88" AutomationProperties.Name="发送编码"
-                            ToolTipService.ToolTip="发送编码" SelectionChanged="OnSelectionChanged" />
-                  <ComboBox x:Name="EndingPicker" Grid.Column="1" MinWidth="80" AutomationProperties.Name="行尾"
-                            ToolTipService.ToolTip="发送行尾" SelectionChanged="OnSelectionChanged" />
-                  <TextBlock x:Name="SendHint" Grid.Column="2" Text="Ctrl+Enter 发送 · Enter 换行" FontSize="12" VerticalAlignment="Center"
-                             Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
-                  <Button x:Name="SendButton" Grid.Column="3" Content="发送" MinWidth="72" Style="{ThemeResource AccentButtonStyle}"
-                          Click="OnSend" ToolTipService.ToolTip="发送数据 (Ctrl+Enter)" />
-                </Grid>
-              </StackPanel>
-            </Border>
+            <ListView x:Name="Terminal" Grid.Row="1" SelectionMode="Extended" AutomationProperties.Name="串口数据终端"
+                      Background="Transparent" ScrollViewer.HorizontalScrollMode="Disabled" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+              <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                  <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                  <Setter Property="Padding" Value="18,8" />
+                  <Setter Property="MinHeight" Value="34" />
+                </Style>
+              </ListView.ItemContainerStyle>
+              <ListView.ItemTemplate>
+                <DataTemplate x:DataType="local:TerminalFrame">
+                  <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="100" />
+                      <ColumnDefinition Width="64" />
+                      <ColumnDefinition Width="48" />
+                      <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{x:Bind Time}" FontFamily="Consolas" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                      <Viewbox Width="12" Height="12">
+                        <SymbolIcon Symbol="{x:Bind DirectionIcon}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                      </Viewbox>
+                      <TextBlock Text="{x:Bind Direction}" FontFamily="Consolas" FontSize="12" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="2" Text="{x:Bind Size}" FontFamily="Consolas" FontSize="12" HorizontalAlignment="Right"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <TextBlock Grid.Column="3" Text="{x:Bind DisplayText, Mode=OneWay}" TextWrapping="Wrap" IsTextSelectionEnabled="True"
+                               FontFamily="Consolas" FontSize="13" />
+                  </Grid>
+                </DataTemplate>
+              </ListView.ItemTemplate>
+            </ListView>
+            <StackPanel x:Name="EmptyState" Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center"
+                        Spacing="12" Margin="24" MaxWidth="320">
+              <FontIcon x:Name="EmptyIcon" Glyph="&#xE756;" FontSize="32" HorizontalAlignment="Center"
+                        Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+              <TextBlock x:Name="EmptyTitle" Text="暂无收发记录" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center" />
+              <TextBlock x:Name="EmptyDescription" Text="在左侧选择串口并连接，即可开始收发。" FontSize="12" TextWrapping="Wrap" TextAlignment="Center"
+                         Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+              <Button x:Name="ResetFiltersButton" Content="清除筛选" Click="OnResetFilters" HorizontalAlignment="Center" Visibility="Collapsed" />
+            </StackPanel>
           </Grid>
-        </SplitView>
-      </Border>
+
+          <Grid Grid.Row="2" Padding="18,0" ColumnSpacing="12" BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}" BorderThickness="0,1,0,0">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="接收编码" FontSize="12" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            <ComboBox x:Name="DisplayPicker" Grid.Column="1" Width="96" VerticalAlignment="Center"
+                      AutomationProperties.Name="接收编码" SelectionChanged="OnDisplayChanged" />
+            <ToggleButton x:Name="AutoScrollToggle" Grid.Column="3" IsChecked="True" Click="OnAutoScroll"
+                          VerticalAlignment="Center" ToolTipService.ToolTip="跟随最新的数据">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <SymbolIcon Symbol="Download" />
+                <TextBlock Text="自动滚动" FontSize="12" />
+              </StackPanel>
+            </ToggleButton>
+            <Button x:Name="ClearButton" Grid.Column="4" Click="OnClear" VerticalAlignment="Center" ToolTipService.ToolTip="清空终端 (Ctrl+L)">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <SymbolIcon Symbol="Delete" />
+                <TextBlock Text="清屏" FontSize="12" />
+              </StackPanel>
+            </Button>
+          </Grid>
+        </Grid>
+
+        <Thumb Grid.Row="2" HorizontalAlignment="Stretch" DragDelta="OnComposerResize" KeyDown="OnSplitterKeyDown"
+               IsTabStop="True" AutomationProperties.Name="调整收发区域高度" ToolTipService.ToolTip="拖动调整收发区域；方向键微调">
+          <Thumb.Template>
+            <ControlTemplate TargetType="Thumb">
+              <Grid Background="{ThemeResource SubtleFillColorSecondaryBrush}">
+                <Border Height="1" VerticalAlignment="Center" Background="{ThemeResource DividerStrokeColorDefaultBrush}" />
+                <Border Width="28" Height="3" CornerRadius="2" HorizontalAlignment="Center"
+                        Background="{ThemeResource TextFillColorSecondaryBrush}" />
+              </Grid>
+            </ControlTemplate>
+          </Thumb.Template>
+        </Thumb>
+
+        <Grid Grid.Row="3">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="44" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+          </Grid.RowDefinitions>
+          <Grid Padding="18,0" ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+              <SymbolIcon Symbol="Edit" />
+              <TextBlock Text="发送区" FontSize="13" FontWeight="SemiBold" AutomationProperties.HeadingLevel="Level2" />
+            </StackPanel>
+            <TextBlock Grid.Column="1" Text="编码" FontSize="12" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            <ComboBox x:Name="SendFormatPicker" Grid.Column="2" Width="96" VerticalAlignment="Center"
+                      AutomationProperties.Name="发送编码" SelectionChanged="OnSelectionChanged" />
+            <TextBlock Grid.Column="3" Text="行尾" FontSize="12" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            <ComboBox x:Name="EndingPicker" Grid.Column="4" Width="80" VerticalAlignment="Center"
+                      AutomationProperties.Name="发送行尾" SelectionChanged="OnSelectionChanged" />
+          </Grid>
+          <TextBox x:Name="InputBox" Grid.Row="1" AcceptsReturn="True" TextWrapping="Wrap" PlaceholderText="输入文本或设备指令…"
+                   Padding="18,8" Background="Transparent" BorderThickness="0" CornerRadius="0" FontFamily="Consolas" FontSize="13"
+                   AutomationProperties.Name="要发送的数据" TextChanged="OnInputChanged" />
+          <Grid Grid.Row="2" Padding="18,8,18,14" ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Name="SendHint" Text="Ctrl+Enter 发送 · Enter 换行" FontSize="12" VerticalAlignment="Center"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" />
+            <TextBlock x:Name="InputCount" Grid.Column="1" FontSize="12" VerticalAlignment="Center"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            <Button x:Name="SendButton" Grid.Column="2" MinWidth="88" Style="{ThemeResource AccentButtonStyle}"
+                    Click="OnSend" ToolTipService.ToolTip="发送数据 (Ctrl+Enter)">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <SymbolIcon Symbol="Send" />
+                <TextBlock x:Name="SendLabel" Text="发送" />
+              </StackPanel>
+            </Button>
+          </Grid>
+        </Grid>
+      </Grid>
     </Grid>
 
-    <Grid Grid.Row="3" Padding="12,8" ColumnSpacing="20">
+    <Grid Grid.Row="2" Padding="16,8" ColumnSpacing="16">
       <Grid.ColumnDefinitions>
         <ColumnDefinition Width="*" />
         <ColumnDefinition Width="Auto" />

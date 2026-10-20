@@ -13,7 +13,7 @@ struct SerialStudioApp: App {
                 .preferredColorScheme(serial.colorScheme)
                 .task { delegate.serial = serial; await serial.start() }
         }
-        .defaultSize(width: 1280, height: 780)
+        .defaultSize(width: 1180, height: 780)
         .windowResizability(.contentMinSize)
         .commands {
             SerialViewCommands()
@@ -34,8 +34,6 @@ struct SerialStudioApp: App {
 }
 
 private struct SerialViewCommands: Commands {
-    @FocusedBinding(\.serialDeviceSidebar) private var showsDeviceSidebar
-    @FocusedBinding(\.serialConnectionInspector) private var showsConnectionInspector
     @FocusedBinding(\.serialSearchRequested) private var searchRequested
 
     var body: some Commands {
@@ -43,18 +41,6 @@ private struct SerialViewCommands: Commands {
             Button("查找数据") { searchRequested = true }
                 .keyboardShortcut("f")
                 .disabled(searchRequested == nil)
-        }
-        CommandGroup(before: .sidebar) {
-            Button(showsDeviceSidebar == true ? "隐藏设备侧栏" : "显示设备侧栏") {
-                showsDeviceSidebar?.toggle()
-            }
-            .keyboardShortcut("s", modifiers: [.command, .option])
-            .disabled(showsDeviceSidebar == nil)
-            Button(showsConnectionInspector == true ? "隐藏连接设置" : "显示连接设置") {
-                showsConnectionInspector?.toggle()
-            }
-            .keyboardShortcut("i", modifiers: [.command, .option])
-            .disabled(showsConnectionInspector == nil)
         }
     }
 }
