@@ -13,9 +13,10 @@ struct SerialStudioApp: App {
                 .preferredColorScheme(serial.colorScheme)
                 .task { delegate.serial = serial; await serial.start() }
         }
-        .defaultSize(width: 1120, height: 740)
+        .defaultSize(width: 1280, height: 780)
         .windowResizability(.contentMinSize)
         .commands {
+            SerialViewCommands()
             CommandGroup(after: .appInfo) {
                 Button("检查更新…", action: updater.check).disabled(!updater.canCheck)
             }
@@ -29,6 +30,32 @@ struct SerialStudioApp: App {
             }
         }
         Settings { SettingsView(serial: serial, updater: updater).preferredColorScheme(serial.colorScheme) }
+    }
+}
+
+private struct SerialViewCommands: Commands {
+    @FocusedBinding(\.serialDeviceSidebar) private var showsDeviceSidebar
+    @FocusedBinding(\.serialConnectionInspector) private var showsConnectionInspector
+    @FocusedBinding(\.serialSearchRequested) private var searchRequested
+
+    var body: some Commands {
+        CommandGroup(after: .textEditing) {
+            Button("查找数据") { searchRequested = true }
+                .keyboardShortcut("f")
+                .disabled(searchRequested == nil)
+        }
+        CommandGroup(before: .sidebar) {
+            Button(showsDeviceSidebar == true ? "隐藏设备侧栏" : "显示设备侧栏") {
+                showsDeviceSidebar?.toggle()
+            }
+            .keyboardShortcut("s", modifiers: [.command, .option])
+            .disabled(showsDeviceSidebar == nil)
+            Button(showsConnectionInspector == true ? "隐藏连接设置" : "显示连接设置") {
+                showsConnectionInspector?.toggle()
+            }
+            .keyboardShortcut("i", modifiers: [.command, .option])
+            .disabled(showsConnectionInspector == nil)
+        }
     }
 }
 

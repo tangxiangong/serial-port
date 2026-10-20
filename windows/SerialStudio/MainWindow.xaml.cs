@@ -11,10 +11,12 @@ namespace SerialStudio;
 public sealed partial class MainWindow : Window
 {
     private readonly ObservableCollection<TerminalFrame> frames = [];
+    private readonly ObservableCollection<TerminalFrame> visibleFrames = [];
     private readonly CancellationTokenSource lifetime = new();
     private readonly DispatcherQueueTimer timer;
     private SerialStatus status = new() { connected = false, path = null, config = null, rx_bytes = 0, tx_bytes = 0, opened_at = null, last_error = null };
     private bool busy, sending, polling, refreshing, updating = true, started, closed;
+    private bool? wideLayout;
     private int ticks, retainedBytes, connectionRevision;
     private static readonly string[] Formats = ["hex", "ascii", "gbk", "utf-8"];
     private static readonly string[] Endings = ["none", "lf", "cr", "crlf"];
@@ -23,8 +25,15 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        AppWindow.Resize(new Windows.Graphics.SizeInt32(1180, 800));
-        Terminal.ItemsSource = frames;
+        ExtendsContentIntoTitleBar = true;
+        SetTitleBar(AppTitleBar);
+        AppWindow.Resize(new Windows.Graphics.SizeInt32(1360, 860));
+        if (AppWindow.Presenter is OverlappedPresenter presenter)
+        {
+            presenter.PreferredMinimumWidth = 920;
+            presenter.PreferredMinimumHeight = 640;
+        }
+        Terminal.ItemsSource = visibleFrames;
         BaudPicker.ItemsSource = new uint[] { 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600 };
         DataBitsPicker.ItemsSource = new byte[] { 5, 6, 7, 8 }; StopBitsPicker.ItemsSource = new byte[] { 1, 2 };
         ParityPicker.ItemsSource = new[] { "无", "奇校验", "偶校验" }; FlowPicker.ItemsSource = new[] { "无", "XON / XOFF", "RTS / CTS" };
@@ -36,7 +45,7 @@ public sealed partial class MainWindow : Window
         DisplayPicker.SelectedIndex = IndexOrDefault(Formats, preferences.DisplayFormat, 3);
         SendFormatPicker.SelectedIndex = IndexOrDefault(Formats, preferences.SendFormat, 3);
         EndingPicker.ItemsSource = new[] { "无", "LF", "CR", "CRLF" }; EndingPicker.SelectedIndex = IndexOrDefault(Endings, preferences.LineEnding, 0);
-        AutoScrollToggle.IsOn = preferences.AutoScroll; ApplyAppearance();
+        AutoScrollToggle.IsChecked = preferences.AutoScroll; ApplyAppearance();
         timer = DispatcherQueue.CreateTimer(); timer.Interval = TimeSpan.FromMilliseconds(100); timer.Tick += OnTick;
         Updater.Changed += OnUpdaterChanged;
         UpdateActivity.Changed += OnUpdaterChanged;
@@ -48,6 +57,12 @@ public sealed partial class MainWindow : Window
     private async void OnLoaded(object sender, RoutedEventArgs args)
     {
         if (started) return; started = true;
+        if (AppWindow.Presenter is OverlappedPresenter presenter)
+        {
+            var scale = Root.XamlRoot.RasterizationScale;
+            presenter.PreferredMinimumWidth = (int)Math.Ceiling(920 * scale);
+            presenter.PreferredMinimumHeight = (int)Math.Ceiling(640 * scale);
+        }
         await RefreshPorts(); timer.Start();
         await Updater.Start(Root, lifetime.Token);
     }
@@ -70,7 +85,7 @@ public sealed partial class MainWindow : Window
             }
             while (frames.Count > 2000 || retainedBytes > 8 * 1024 * 1024) { retainedBytes -= frames[0].MemoryCost; frames.RemoveAt(0); }
             if (batch.dropped_frames > 0) ShowError($"显示缓冲已丢弃 {batch.dropped_frames} 条旧记录；字节统计保持完整。");
-            if (batch.frames.Count > 0 && preferences.AutoScroll && frames.Count > 0) Terminal.ScrollIntoView(frames[^1]);
+            if (batch.frames.Count > 0) RefreshTerminal();
             RefreshState();
             if (++ticks % 10 == 0) await RefreshPorts(silent: true);
         }
@@ -83,10 +98,10 @@ public sealed partial class MainWindow : Window
         try
         {
             var ports = await RustCore.Ports(); if (closed) return;
-            var choices = ports.Select(p => new PortChoice(p.path, $"{p.display_name} · {p.path}", p)).ToList();
+            var choices = ports.Select(p => new PortChoice(p.path, p.display_name, p)).ToList();
             var selected = status.connected ? status.path : preferences.SelectedPath;
             if (status.connected && !choices.Any(p => p.Path == selected) && selected is not null) choices.Add(new(selected, selected + "（已移除）", null));
-            // Preserve an open picker and its keyboard focus between hotplug scans.
+            // Preserve native list selection and keyboard focus between hotplug scans.
             if (PortPicker.ItemsSource is List<PortChoice> current && current.Count == choices.Count && current.Zip(choices).All(pair => SamePort(pair.First, pair.Second))) return;
             updating = true;
             PortPicker.ItemsSource = choices;
@@ -100,7 +115,8 @@ public sealed partial class MainWindow : Window
     private async void OnConnect(object sender, RoutedEventArgs args) => await ToggleConnection();
     private async Task ToggleConnection()
     {
-        if (busy || closed) return; busy = true; connectionRevision++; RefreshState();
+        if (busy || closed || (!status.connected && PortPicker.SelectedItem is not PortChoice)) return;
+        busy = true; connectionRevision++; RefreshState();
         try
         {
             SavePreferences(); ErrorBar.IsOpen = false;
@@ -133,15 +149,32 @@ public sealed partial class MainWindow : Window
         foreach (var picker in new[] { BaudPicker, DataBitsPicker, StopBitsPicker, ParityPicker, FlowPicker })
             picker.IsEnabled = !busy && !status.connected;
         ConnectButton.IsEnabled = !busy && (status.connected || PortPicker.SelectedItem is PortChoice);
-        ConnectButton.Content = busy ? "正在处理…" : status.connected ? "断开连接" : "连接串口";
+        ConnectButton.Label = busy ? "正在处理…" : status.connected ? "断开连接" : "连接";
+        var connectionSymbol = status.connected ? Symbol.Stop : Symbol.Play;
+        if (ConnectButton.Icon is not SymbolIcon icon || icon.Symbol != connectionSymbol)
+            ConnectButton.Icon = new SymbolIcon(connectionSymbol);
         SendButton.IsEnabled = status.connected && !sending && !busy && InputBox.Text.Length > 0;
-        SendButton.Content = sending ? "发送中" : "发送";
+        SendButton.Content = sending ? "发送中…" : "发送 ↑";
         EndingPicker.IsEnabled = SendFormatPicker.SelectedIndex != 0;
-        EmptyState.Visibility = frames.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-        EmptyTitle.Text = status.connected ? "等待设备数据" : "连接串口后开始";
-        FrameCount.Text = $"{frames.Count} 条记录 · ↓ RX 接收 / ↑ TX 发送";
-        ConnectionStatus.Text = status.connected ? $"已连接 · {status.path} · {preferences.BaudRate}" : "未连接";
+        InputBox.PlaceholderText = SendFormatPicker.SelectedIndex == 0 ? "十六进制数据，例如 AA 01 FF" : "输入文本或设备指令…";
+        SendHint.Text = SendFormatPicker.SelectedIndex == 0 ? "HEX 按原始字节发送，不追加行尾。" : "Ctrl+Enter 发送 · Enter 换行";
+        EmptyState.Visibility = visibleFrames.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        var filteredEmpty = frames.Count > 0 && visibleFrames.Count == 0;
+        EmptyTitle.Text = filteredEmpty ? "没有匹配的数据" : status.connected ? "等待设备数据" : "准备连接";
+        EmptyDescription.Text = filteredEmpty ? "尝试其他搜索内容，或显示全部方向。"
+            : status.connected ? "收到的数据会实时出现在这里，也可以在下方发送指令。" : "选择串口，确认连接设置，然后点击“连接”。";
+        ResetFiltersButton.Visibility = filteredEmpty ? Visibility.Visible : Visibility.Collapsed;
+        FrameCount.Text = TerminalSearch.Text.Length == 0 && DirectionPicker.SelectedIndex == 0
+            ? $"{frames.Count} 条记录" : $"{visibleFrames.Count} / {frames.Count} 条记录";
+        ClearButton.IsEnabled = frames.Count > 0;
+        var selected = PortPicker.SelectedItem as PortChoice;
+        SessionSubtitle.Text = status.connected ? $"{status.path} · {preferences.BaudRate} baud" : selected?.DisplayName ?? "选择设备后即可开始";
+        ConnectionStatus.Text = status.connected ? $"● 已连接 · {status.path} · {preferences.BaudRate} baud" : "○ 未连接";
         ByteStatus.Text = $"RX {status.rx_bytes:N0} B    TX {status.tx_bytes:N0} B";
+        PortCount.Text = PortPicker.Items.Count.ToString();
+        DeviceEmptyState.Visibility = PortPicker.Items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        RefreshButton.IsEnabled = !refreshing;
+        ConfigHint.Text = busy ? "正在更改连接状态…" : status.connected ? "断开连接后可修改通信参数。" : "选择设备并确认通信参数。";
         CheckUpdateButton.IsEnabled = Updater.CanCheck;
         ApplyUpdateButton.Visibility = string.IsNullOrEmpty(Updater.PendingVersion) ? Visibility.Collapsed : Visibility.Visible;
         ApplyUpdateButton.IsEnabled = !UpdateActivity.IsBusy;
@@ -149,7 +182,16 @@ public sealed partial class MainWindow : Window
     private void ShowPortDetails()
     {
         var port = (PortPicker.SelectedItem as PortChoice)?.Info;
-        PortDetails.Text = port is null ? "接入 USB 串口设备后会自动出现在这里。" : $"{port.path}\n{port.manufacturer}\nVID {port.vid} · PID {port.pid}";
+        if (port is null)
+        {
+            PortDetails.Text = status.connected ? "设备已移除，请断开后重新连接。" : "从左侧选择一个串口设备。";
+            return;
+        }
+        var details = new List<string> { port.display_name, port.path };
+        if (!string.IsNullOrWhiteSpace(port.manufacturer)) details.Add($"厂商  {port.manufacturer}");
+        if (!string.IsNullOrWhiteSpace(port.vid) && !string.IsNullOrWhiteSpace(port.pid)) details.Add($"VID / PID  {port.vid} / {port.pid}");
+        if (!string.IsNullOrWhiteSpace(port.serial_number)) details.Add($"序列号  {port.serial_number}");
+        PortDetails.Text = string.Join("\n\n", details);
     }
     private void SavePreferences()
     {
@@ -159,7 +201,7 @@ public sealed partial class MainWindow : Window
         preferences.Parity = Math.Max(0, ParityPicker.SelectedIndex); preferences.FlowControl = Math.Max(0, FlowPicker.SelectedIndex);
         preferences.SelectedPath = (PortPicker.SelectedItem as PortChoice)?.Path ?? "";
         preferences.DisplayFormat = Formats[Math.Clamp(DisplayPicker.SelectedIndex, 0, 3)]; preferences.SendFormat = Formats[Math.Clamp(SendFormatPicker.SelectedIndex, 0, 3)];
-        preferences.LineEnding = Endings[Math.Clamp(EndingPicker.SelectedIndex, 0, 3)]; preferences.AutoScroll = AutoScrollToggle.IsOn;
+        preferences.LineEnding = Endings[Math.Clamp(EndingPicker.SelectedIndex, 0, 3)]; preferences.AutoScroll = AutoScrollToggle.IsChecked == true;
         preferences.Save();
     }
     private void OnSelectionChanged(object sender, SelectionChangedEventArgs args)
@@ -170,28 +212,90 @@ public sealed partial class MainWindow : Window
     private void OnDisplayChanged(object sender, SelectionChangedEventArgs args)
     {
         if (updating) return;
-        OnSelectionChanged(sender, args); foreach (var frame in frames) frame.SetFormat(preferences.DisplayFormat);
+        OnSelectionChanged(sender, args);
+        foreach (var frame in frames) frame.SetFormat(preferences.DisplayFormat);
+        RefreshTerminal(); RefreshState();
     }
-    private void OnAutoScroll(object sender, RoutedEventArgs args) { if (!updating) { try { SavePreferences(); } catch (Exception error) { ShowError(error.Message); } } }
+    private void OnAutoScroll(object sender, RoutedEventArgs args)
+    {
+        if (updating) return;
+        try { SavePreferences(); ScrollToLatest(); } catch (Exception error) { ShowError(error.Message); }
+    }
     private void OnInputChanged(object sender, TextChangedEventArgs args) { if (!updating) RefreshState(); }
-    private void OnClear(object sender, RoutedEventArgs args) { frames.Clear(); retainedBytes = 0; RefreshState(); }
+    private void OnClear(object sender, RoutedEventArgs args) { frames.Clear(); visibleFrames.Clear(); retainedBytes = 0; RefreshState(); }
     private async void OnRefresh(object sender, RoutedEventArgs args) => await RefreshPorts();
+    private void RefreshTerminal()
+    {
+        var query = TerminalSearch.Text;
+        var direction = DirectionPicker.SelectedIndex;
+        var matches = frames.Where(frame =>
+            (direction <= 0 || frame.IsReceive == (direction == 1))
+            && (query.Length == 0 || frame.DisplayText.Contains(query, StringComparison.CurrentCultureIgnoreCase))).ToList();
+        var retained = matches.ToHashSet();
+        // Keep existing rows alive so incoming data doesn't reset selection or scroll position.
+        for (var index = visibleFrames.Count - 1; index >= 0; index--)
+            if (!retained.Contains(visibleFrames[index])) visibleFrames.RemoveAt(index);
+        for (var index = 0; index < matches.Count; index++)
+            if (index >= visibleFrames.Count || !ReferenceEquals(visibleFrames[index], matches[index]))
+                visibleFrames.Insert(index, matches[index]);
+        ScrollToLatest();
+    }
+    private void ScrollToLatest()
+    {
+        if (preferences.AutoScroll && visibleFrames.Count > 0) Terminal.ScrollIntoView(visibleFrames[^1]);
+    }
+    private void OnSearchChanged(object sender, TextChangedEventArgs args)
+    {
+        if (updating) return;
+        RefreshTerminal(); RefreshState();
+    }
+    private void OnFilterChanged(object sender, SelectionChangedEventArgs args)
+    {
+        if (updating) return;
+        RefreshTerminal(); RefreshState();
+    }
+    private void OnResetFilters(object sender, RoutedEventArgs args)
+    {
+        updating = true;
+        TerminalSearch.Text = ""; DirectionPicker.SelectedIndex = 0;
+        updating = false;
+        RefreshTerminal(); RefreshState();
+    }
+    private void OnInspector(object sender, RoutedEventArgs args)
+        => ConnectionInspector.IsPaneOpen = InspectorToggle.IsChecked == true;
+    private void OnInspectorPaneOpened(SplitView sender, object args)
+        => InspectorToggle.IsChecked = sender.IsPaneOpen;
+    private void OnInspectorPaneClosed(SplitView sender, object args)
+        => InspectorToggle.IsChecked = sender.IsPaneOpen;
+    private void OnRootSizeChanged(object sender, SizeChangedEventArgs args)
+    {
+        if (ConnectionInspector is null || InspectorToggle is null || args.NewSize.Width <= 0) return;
+        var wide = args.NewSize.Width >= 1120;
+        if (wideLayout == wide) return;
+        wideLayout = wide;
+        ConnectionInspector.DisplayMode = wide ? SplitViewDisplayMode.Inline : SplitViewDisplayMode.Overlay;
+        if (!wide) { ConnectionInspector.IsPaneOpen = false; InspectorToggle.IsChecked = false; }
+    }
     private void ShowError(string message) { ErrorBar.Message = message; ErrorBar.IsOpen = true; }
     private void OnUpdaterChanged() { DispatcherQueue.TryEnqueue(RefreshState); }
     private async void OnCheckUpdate(object sender, RoutedEventArgs args) => await Updater.Check(Root, lifetime: lifetime.Token);
     private void OnApplyUpdate(object sender, RoutedEventArgs args) => Updater.ApplyPending();
     private async void OnSettings(object sender, RoutedEventArgs args)
     {
-        var appearance = new ComboBox { Header = "主题", ItemsSource = new[] { "跟随系统", "浅色", "深色" }, SelectedIndex = preferences.Appearance == "dark" ? 2 : preferences.Appearance == "light" ? 1 : 0 };
+        var appearance = new ComboBox { Header = "主题", HorizontalAlignment = HorizontalAlignment.Stretch, ItemsSource = new[] { "跟随系统", "浅色", "深色" }, SelectedIndex = preferences.Appearance == "dark" ? 2 : preferences.Appearance == "light" ? 1 : 0 };
         var channels = new[] { "stable", "beta", "alpha" };
-        var channel = new ComboBox { Header = "更新通道", ItemsSource = new[] { "稳定版", "Beta", "Alpha" }, SelectedIndex = IndexOrDefault(channels, Updater.Channel, 0) };
+        var channel = new ComboBox { Header = "更新通道", HorizontalAlignment = HorizontalAlignment.Stretch, ItemsSource = new[] { "稳定版", "Beta", "Alpha" }, SelectedIndex = IndexOrDefault(channels, Updater.Channel, 0) };
         var checks = new ToggleSwitch { Header = "自动检查更新", IsOn = Updater.AutomaticChecks };
         var downloads = new ToggleSwitch { Header = "自动下载更新", IsOn = Updater.AutomaticDownloads };
         var content = new StackPanel { Spacing = 16, MinWidth = 360 };
-        content.Children.Add(new TextBlock { Text = $"Serial Studio {Updater.CurrentVersion}", Style = (Style)Application.Current.Resources["SubtitleTextBlockStyle"] });
-        foreach (var element in new FrameworkElement[] { appearance, channel, checks, downloads }) content.Children.Add(element);
-        content.Children.Add(new TextBlock { Text = Updater.UnavailableReason ?? "安装前请断开串口。更新公告按 Windows 与系统语言筛选。", TextWrapping = TextWrapping.Wrap });
-        var dialog = new ContentDialog { XamlRoot = Root.XamlRoot, Title = "设置", Content = content, PrimaryButtonText = "保存", CloseButtonText = "取消", DefaultButton = ContentDialogButton.Primary };
+        content.Children.Add(new TextBlock { Text = "外观", Style = (Style)Application.Current.Resources["SubtitleTextBlockStyle"] });
+        content.Children.Add(appearance);
+        content.Children.Add(new TextBlock { Text = "软件更新", Style = (Style)Application.Current.Resources["SubtitleTextBlockStyle"], Margin = new Thickness(0, 12, 0, 0) });
+        content.Children.Add(new TextBlock { Text = $"当前版本  {Updater.CurrentVersion}", FontSize = 12 });
+        foreach (var element in new FrameworkElement[] { channel, checks, downloads }) content.Children.Add(element);
+        content.Children.Add(new TextBlock { Text = Updater.UnavailableReason ?? "断开串口后可检查和安装更新。", TextWrapping = TextWrapping.Wrap, FontSize = 12 });
+        var scroll = new ScrollViewer { Content = content, MaxHeight = 420, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
+        var dialog = new ContentDialog { XamlRoot = Root.XamlRoot, Title = "设置", Content = scroll, PrimaryButtonText = "保存", CloseButtonText = "取消", DefaultButton = ContentDialogButton.Primary };
         if (await DialogHost.Show(dialog) != ContentDialogResult.Primary) return;
         try
         {
@@ -206,6 +310,16 @@ public sealed partial class MainWindow : Window
     private async void OnSendShortcut(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args) { args.Handled = true; await Send(); }
     private async void OnRefreshShortcut(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args) { args.Handled = true; await RefreshPorts(); }
     private void OnClearShortcut(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args) { args.Handled = true; OnClear(sender, new()); }
+    private void OnFindShortcut(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+    {
+        args.Handled = true; TerminalSearch.Focus(FocusState.Programmatic); TerminalSearch.SelectAll();
+    }
+    private void OnInspectorShortcut(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+    {
+        args.Handled = true;
+        ConnectionInspector.IsPaneOpen = !ConnectionInspector.IsPaneOpen;
+        InspectorToggle.IsChecked = ConnectionInspector.IsPaneOpen;
+    }
     private void OnClosed(object sender, WindowEventArgs args)
     {
         closed = true; timer.Stop(); lifetime.Cancel();
