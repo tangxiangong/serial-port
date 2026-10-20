@@ -16,6 +16,9 @@ if [[ -d "$destination" ]]; then rm -rf "$destination"; fi
 ditto "$source_app" "$destination"
 if [[ -n "${SPARKLE_PUBLIC_ED_KEY:-}" ]]; then /usr/libexec/PlistBuddy -c "Add :SUPublicEDKey string $SPARKLE_PUBLIC_ED_KEY" "$destination/Contents/Info.plist"; fi
 if [[ -n "${UPDATE_BASE_URL:-}" ]]; then /usr/libexec/PlistBuddy -c "Add :UpdateBaseURL string $UPDATE_BASE_URL" "$destination/Contents/Info.plist"; fi
-codesign --force --sign "${CODE_SIGN_IDENTITY:--}" --options runtime "$destination"
+# Keep Xcode's signing policy, including Debug entitlements and runtime flags.
+# Forcing hardened runtime onto an ad hoc Debug launcher prevents it from loading
+# SerialStudio.debug.dylib because neither binary has a signing team identifier.
+codesign --force --sign "${CODE_SIGN_IDENTITY:--}" --preserve-metadata=entitlements,flags,runtime "$destination"
 codesign --verify --deep --strict "$destination"
 printf 'Built %s\n' "$destination"

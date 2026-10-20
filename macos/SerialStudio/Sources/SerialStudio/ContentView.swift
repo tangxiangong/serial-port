@@ -31,7 +31,7 @@ struct ContentView: View {
                             Task { await serial.toggleConnection() }
                         } label: {
                             Label(serial.busy ? "正在处理…" : serial.status.connected ? "断开连接" : "连接",
-                                  systemImage: serial.status.connected ? "stop.circle" : "play.fill")
+                                  systemImage: serial.status.connected ? "stop.fill" : "play.fill")
                         }
                         .labelStyle(.titleAndIcon)
                         .disabled(serial.busy || (!serial.status.connected && serial.preferences.selectedPath.isEmpty))
@@ -64,8 +64,9 @@ struct ContentView: View {
         width >= 1100 ? $showsConnectionInspector : $showsInspectorPopover
     }
 
-    // HSplitView avoids the NavigationSplitView/inspector constraint cycle.
-    // Forward the title-bar inset to each AppKit-hosted column.
+    // Keep one native split container: NavigationSplitView + inspector causes a
+    // recurring window-constraint exception, even with the inspector on the root.
+    // AppKit-hosted columns need the title-bar inset forwarded to their content.
     private func panes(width: CGFloat, topInset: CGFloat) -> some View {
         HSplitView {
             if showsDeviceSidebar {
@@ -107,10 +108,11 @@ struct ContentView: View {
             Text("RX \(serial.status.rxBytes.formatted()) B")
             Text("TX \(serial.status.txBytes.formatted()) B")
         }
-        .font(.system(size: 11).monospacedDigit())
+        .font(.caption.monospacedDigit())
         .foregroundStyle(.secondary)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 7)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(.bar)
         .accessibilityElement(children: .combine)
     }
 

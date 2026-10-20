@@ -18,45 +18,26 @@ struct TerminalView: View {
         let frames = visibleFrames
         VStack(spacing: 0) {
             HStack(spacing: 12) {
-                Text("数据终端").font(.headline)
+                Picker("数据方向", selection: $direction) {
+                    ForEach(TerminalDirection.allCases) { Text($0.rawValue).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(width: 164)
                 Text(searchText.isEmpty && direction == .all
                      ? "\(serial.frames.count) 条" : "\(frames.count) / \(serial.frames.count) 条")
-                    .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
-                Spacer(minLength: 8)
+                    .font(.caption.monospacedDigit()).foregroundStyle(.secondary).lineLimit(1)
+                Spacer(minLength: 0)
                 Picker("显示编码", selection: $serial.preferences.displayFormat) {
                     ForEach(DataFormat.allCases) { Text($0.title).tag($0) }
                 }
                 .labelsHidden().frame(width: 90)
             }
-            .padding(.horizontal, 16).padding(.vertical, 12)
-            HStack(spacing: 12) {
-                Picker("数据方向", selection: $direction) {
-                    ForEach(TerminalDirection.allCases) { Text($0.rawValue).tag($0) }
-                }
-                .labelsHidden().frame(width: 106)
-                Spacer(minLength: 8)
-                TerminalSearchField(text: $searchText, focusRequested: $searchRequested)
-                    .frame(minWidth: 140, idealWidth: 180, maxWidth: 220)
-                    .frame(height: 24)
-                    .help("搜索数据（⌘F）")
-            }
-            .padding(.horizontal, 16).padding(.bottom, 12)
+            .controlSize(.small)
+            .padding(.horizontal, 12).padding(.vertical, 8)
+            .background(.bar)
             Divider()
-            columnHeadings
-            Divider()
-            ScrollViewReader { proxy in
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 0) {
-                        ForEach(Array(frames.enumerated()), id: \.element.id) { index, frame in
-                            TerminalRow(frame: frame, format: serial.preferences.displayFormat)
-                                .background(index.isMultiple(of: 2) ? Color.primary.opacity(0.025) : .clear)
-                                .id(frame.id)
-                        }
-                        Color.clear.frame(height: 1).id("terminalBottom")
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .background(.background)
+            TerminalTable(frames: frames, format: serial.preferences.displayFormat, autoScroll: serial.preferences.autoScroll)
                 .overlay {
                     if serial.frames.isEmpty {
                         ContentUnavailableView {
@@ -75,18 +56,15 @@ struct TerminalView: View {
                         }
                     }
                 }
-                .onChange(of: frames.last?.id) { _, _ in
-                    if serial.preferences.autoScroll { proxy.scrollTo("terminalBottom", anchor: .bottom) }
-                }
-                .onChange(of: serial.preferences.autoScroll) { _, enabled in
-                    if enabled { proxy.scrollTo("terminalBottom", anchor: .bottom) }
-                }
-                .clipped()
-            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .focusedSceneValue(\.serialSearchRequested, $searchRequested)
         .toolbar {
+            ToolbarItem {
+                TerminalSearchField(text: $searchText, focusRequested: $searchRequested)
+                    .frame(width: 170)
+                    .help("搜索数据（⌘F）")
+            }
             ToolbarItemGroup {
                 Toggle(isOn: $serial.preferences.autoScroll) {
                     Label("自动滚动", systemImage: "arrow.down.to.line")
@@ -101,45 +79,154 @@ struct TerminalView: View {
             }
         }
     }
-
-    private var columnHeadings: some View {
-        HStack(spacing: 12) {
-            Text("时间").frame(width: 94, alignment: .leading)
-            Text("方向").frame(width: 36, alignment: .leading)
-            Text("字节").frame(width: 44, alignment: .trailing)
-            Text("数据").frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .font(.system(size: 11)).foregroundStyle(.secondary)
-        .padding(.horizontal, 16).padding(.vertical, 7)
-        .accessibilityHidden(true)
-    }
 }
 
 private enum TerminalDirection: String, CaseIterable, Identifiable {
-    case all = "全部方向"
-    case receive = "接收 RX"
-    case send = "发送 TX"
+    case all = "全部"
+    case receive = "接收"
+    case send = "发送"
     var id: Self { self }
 }
 
-private struct TerminalRow: View {
-    let frame: SerialFrame
+// AppKit supplies column resizing, multiline rows, selection, copying and precise scrolling.
+private struct TerminalTable: NSViewRepresentable {
+    let frames: [SerialFrame]
     let format: DataFormat
+    let autoScroll: Bool
 
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Text(frame.time).foregroundStyle(.secondary).frame(width: 94, alignment: .leading)
-            Text(frame.isReceive ? "↓ RX" : "↑ TX")
-                .foregroundStyle(frame.isReceive ? .secondary : Color.accentColor)
-                .frame(width: 36, alignment: .leading)
-            Text("\(frame.bytes.count)").foregroundStyle(.secondary).frame(width: 44, alignment: .trailing)
-            Text(frame.display(format)).textSelection(.enabled)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
+    func makeNSView(context: Context) -> NSScrollView {
+        let table = TerminalNSTableView()
+        table.delegate = context.coordinator
+        table.dataSource = context.coordinator
+        table.style = .fullWidth
+        table.usesAlternatingRowBackgroundColors = true
+        table.usesAutomaticRowHeights = true
+        table.rowHeight = 24
+        table.allowsMultipleSelection = true
+        table.columnAutoresizingStyle = .lastColumnOnlyAutoresizingStyle
+        table.autoresizingMask = [.width]
+        table.setAccessibilityLabel("串口数据终端")
+        for (name, title, width, minimum) in [
+            ("time", "时间", 104.0, 88.0),
+            ("direction", "方向", 52.0, 44.0),
+            ("size", "字节", 52.0, 40.0),
+            ("data", "数据", 260.0, 120.0)
+        ] {
+            let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier(name))
+            column.title = title
+            column.width = width
+            column.minWidth = minimum
+            table.addTableColumn(column)
         }
-        .font(.system(size: 12, design: .monospaced))
-        .padding(.horizontal, 16).padding(.vertical, 7)
-        .accessibilityElement(children: .combine)
+        table.copySelection = { [weak coordinator = context.coordinator, weak table] in
+            guard let coordinator, let table else { return }
+            let text = table.selectedRowIndexes.compactMap { index -> String? in
+                guard coordinator.frames.indices.contains(index) else { return nil }
+                return coordinator.frames[index].display(coordinator.format)
+            }.joined(separator: "\n")
+            guard !text.isEmpty else { return }
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(text, forType: .string)
+        }
+        let scroll = NSScrollView()
+        scroll.hasVerticalScroller = true
+        scroll.hasHorizontalScroller = true
+        scroll.autohidesScrollers = true
+        scroll.documentView = table
+        return scroll
+    }
+
+    func updateNSView(_ scroll: NSScrollView, context: Context) {
+        guard let table = scroll.documentView as? NSTableView else { return }
+        let coordinator = context.coordinator
+        let changed = coordinator.frames.map(\.id) != frames.map(\.id) || coordinator.format != format
+        let follow = autoScroll && (changed || !coordinator.autoScroll)
+        if changed {
+            let selection = Set(table.selectedRowIndexes.compactMap { index in
+                coordinator.frames.indices.contains(index) ? coordinator.frames[index].id : nil
+            })
+            let topRow = table.row(at: NSPoint(x: 0, y: scroll.contentView.bounds.minY))
+            let anchor = coordinator.frames.indices.contains(topRow) ? coordinator.frames[topRow].id : nil
+            let offset = topRow >= 0 ? scroll.contentView.bounds.minY - table.rect(ofRow: topRow).minY : 0
+            coordinator.frames = frames
+            coordinator.format = format
+            table.reloadData()
+            table.selectRowIndexes(IndexSet(frames.indices.filter { selection.contains(frames[$0].id) }), byExtendingSelection: false)
+            if !autoScroll, let anchor, let index = frames.firstIndex(where: { $0.id == anchor }) {
+                table.layoutSubtreeIfNeeded()
+                scroll.contentView.scroll(to: NSPoint(x: scroll.contentView.bounds.minX, y: max(0, table.rect(ofRow: index).minY + offset)))
+                scroll.reflectScrolledClipView(scroll.contentView)
+            }
+        }
+        coordinator.autoScroll = autoScroll
+        if follow, !frames.isEmpty { table.scrollRowToVisible(frames.count - 1) }
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    final class Coordinator: NSObject, NSTableViewDataSource, NSTableViewDelegate {
+        var frames: [SerialFrame] = []
+        var format = DataFormat.utf8
+        var autoScroll = false
+
+        func numberOfRows(in tableView: NSTableView) -> Int { frames.count }
+
+        func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
+            guard frames.indices.contains(row), let column = tableColumn else { return nil }
+            let cell: NSTableCellView
+            if let reused = tableView.makeView(withIdentifier: column.identifier, owner: nil) as? NSTableCellView {
+                cell = reused
+            } else {
+                cell = NSTableCellView()
+                cell.identifier = column.identifier
+                let text = NSTextField(wrappingLabelWithString: "")
+                text.font = .monospacedSystemFont(ofSize: NSFont.smallSystemFontSize, weight: .regular)
+                text.isSelectable = true
+                text.translatesAutoresizingMaskIntoConstraints = false
+                if column.identifier.rawValue != "data" { text.maximumNumberOfLines = 1 }
+                if column.identifier.rawValue == "size" { text.alignment = .right }
+                cell.addSubview(text)
+                cell.textField = text
+                NSLayoutConstraint.activate([
+                    text.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 4),
+                    text.trailingAnchor.constraint(equalTo: cell.trailingAnchor, constant: -4),
+                    text.topAnchor.constraint(equalTo: cell.topAnchor, constant: 3),
+                    text.bottomAnchor.constraint(equalTo: cell.bottomAnchor, constant: -3)
+                ])
+            }
+            let frame = frames[row]
+            switch column.identifier.rawValue {
+            case "time": cell.textField?.stringValue = frame.time
+            case "direction": cell.textField?.stringValue = frame.isReceive ? "↓ RX" : "↑ TX"
+            case "size": cell.textField?.stringValue = String(frame.bytes.count)
+            default: cell.textField?.stringValue = frame.display(format)
+            }
+            return cell
+        }
+
+        func tableViewColumnDidResize(_ notification: Notification) {
+            guard let table = notification.object as? NSTableView else { return }
+            table.noteHeightOfRows(withIndexesChanged: IndexSet(integersIn: 0..<frames.count))
+        }
+    }
+}
+
+private final class TerminalNSTableView: NSTableView {
+    var copySelection: (() -> Void)?
+
+    @objc func copy(_ sender: Any?) { copySelection?() }
+
+    override func menu(for event: NSEvent) -> NSMenu? {
+        let row = row(at: convert(event.locationInWindow, from: nil))
+        if row >= 0, !selectedRowIndexes.contains(row) {
+            selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
+        }
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+        let copy = menu.addItem(withTitle: "拷贝数据", action: #selector(copy(_:)), keyEquivalent: "")
+        copy.target = self
+        copy.isEnabled = !selectedRowIndexes.isEmpty
+        return menu
     }
 }
 

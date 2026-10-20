@@ -29,27 +29,27 @@
       </TitleBar.IconSource>
     </TitleBar>
 
-    <CommandBar Grid.Row="1" DefaultLabelPosition="Right" Background="Transparent" Margin="12,0,12,8">
+    <CommandBar Grid.Row="1" DefaultLabelPosition="Right" Background="Transparent">
       <CommandBar.Content>
-        <StackPanel Margin="8,4,16,4" Spacing="2" VerticalAlignment="Center">
-          <TextBlock Text="串口终端" Style="{ThemeResource SubtitleTextBlockStyle}" AutomationProperties.HeadingLevel="Level1" />
-          <TextBlock x:Name="SessionSubtitle" Text="选择设备后即可开始" FontSize="12"
-                     Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" MaxWidth="380" />
-        </StackPanel>
+        <TextBlock x:Name="FrameCount" Text="0 条记录" Margin="16,0" VerticalAlignment="Center"
+                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
       </CommandBar.Content>
       <AppBarButton x:Name="ConnectButton" Label="连接" Icon="Play" Click="OnConnect" ToolTipService.ToolTip="连接或断开串口 (Ctrl+K)" />
+      <AppBarSeparator />
+      <AppBarToggleButton x:Name="AutoScrollToggle" Label="自动滚动" Icon="Download" IsChecked="True"
+                          Click="OnAutoScroll" ToolTipService.ToolTip="跟随最新的数据" />
+      <AppBarButton x:Name="ClearButton" Label="清空终端" Icon="Delete" Click="OnClear"
+                    ToolTipService.ToolTip="清空终端 (Ctrl+L)" />
       <AppBarSeparator />
       <AppBarToggleButton x:Name="InspectorToggle" Label="连接设置" Icon="Setting" IsChecked="True"
                           Click="OnInspector" ToolTipService.ToolTip="显示或隐藏连接设置 (Ctrl+I)" />
       <CommandBar.SecondaryCommands>
         <AppBarButton x:Name="CheckUpdateButton" Label="检查更新" Icon="Download" Click="OnCheckUpdate" />
         <AppBarButton x:Name="ApplyUpdateButton" Label="安装更新" Icon="Refresh" Click="OnApplyUpdate" Visibility="Collapsed" />
-        <AppBarSeparator />
-        <AppBarButton Label="设置" Icon="Setting" Click="OnSettings" />
       </CommandBar.SecondaryCommands>
     </CommandBar>
 
-    <Grid Grid.Row="2" ColumnSpacing="12" Margin="12,0,12,0">
+    <Grid Grid.Row="2">
       <Grid.ColumnDefinitions>
         <ColumnDefinition Width="216" />
         <ColumnDefinition Width="*" />
@@ -82,8 +82,6 @@
             <ListView.ItemContainerStyle>
               <Style TargetType="ListViewItem">
                 <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                <Setter Property="Margin" Value="0,2" />
-                <Setter Property="Padding" Value="10,8" />
               </Style>
             </ListView.ItemContainerStyle>
             <ListView.ItemTemplate>
@@ -120,7 +118,7 @@
       </Grid>
 
       <Border Grid.Column="1" Background="{ThemeResource LayerFillColorDefaultBrush}"
-              BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8">
+              BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}" BorderThickness="1,0,0,0">
         <SplitView x:Name="ConnectionInspector" PanePlacement="Right" DisplayMode="Inline" IsPaneOpen="True"
                    OpenPaneLength="272" PaneBackground="{ThemeResource LayerFillColorDefaultBrush}"
                    PaneOpened="OnInspectorPaneOpened" PaneClosed="OnInspectorPaneClosed">
@@ -157,47 +155,29 @@
             <Grid.RowDefinitions>
               <RowDefinition Height="Auto" />
               <RowDefinition Height="Auto" />
-              <RowDefinition Height="Auto" />
               <RowDefinition Height="*" />
               <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <InfoBar x:Name="ErrorBar" IsOpen="False" Severity="Error" IsClosable="True" Margin="12,12,12,0" />
-            <Grid Grid.Row="1" Padding="16,12" ColumnSpacing="12">
+            <Grid Grid.Row="1" Padding="12,8" ColumnSpacing="12">
               <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
               </Grid.ColumnDefinitions>
-              <StackPanel Spacing="3" VerticalAlignment="Center">
-                <TextBlock Text="数据终端" FontWeight="SemiBold" AutomationProperties.HeadingLevel="Level2" />
-                <TextBlock x:Name="FrameCount" Text="0 条记录" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-              </StackPanel>
-              <ComboBox x:Name="DirectionPicker" Grid.Column="1" SelectedIndex="0" MinWidth="100" VerticalAlignment="Center"
+              <ComboBox x:Name="DirectionPicker" SelectedIndex="0" MinWidth="100" VerticalAlignment="Center"
                         AutomationProperties.Name="数据方向" SelectionChanged="OnFilterChanged">
                 <ComboBoxItem Content="全部方向" />
                 <ComboBoxItem Content="接收 RX" />
                 <ComboBoxItem Content="发送 TX" />
               </ComboBox>
-              <ComboBox x:Name="DisplayPicker" Grid.Column="2" MinWidth="88" VerticalAlignment="Center"
+              <ComboBox x:Name="DisplayPicker" Grid.Column="1" MinWidth="88" VerticalAlignment="Center"
                         AutomationProperties.Name="显示编码" SelectionChanged="OnDisplayChanged" />
-            </Grid>
-            <Grid Grid.Row="2" Padding="16,0,16,12" ColumnSpacing="8">
-              <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
-              </Grid.ColumnDefinitions>
-              <TextBox x:Name="TerminalSearch" PlaceholderText="搜索数据 (Ctrl+F)" AutomationProperties.Name="搜索终端数据"
+              <TextBox x:Name="TerminalSearch" Grid.Column="2" PlaceholderText="搜索数据 (Ctrl+F)" AutomationProperties.Name="搜索终端数据"
                        TextChanged="OnSearchChanged" />
-              <ToggleButton x:Name="AutoScrollToggle" Grid.Column="1" Content="自动滚动" IsChecked="True"
-                            Click="OnAutoScroll" ToolTipService.ToolTip="跟随最新的数据" />
-              <Button x:Name="ClearButton" Grid.Column="2" Click="OnClear" AutomationProperties.Name="清空终端"
-                      ToolTipService.ToolTip="清空终端 (Ctrl+L)">
-                <FontIcon Glyph="&#xE74D;" FontSize="14" />
-              </Button>
             </Grid>
 
-            <Grid Grid.Row="3">
+            <Grid Grid.Row="2">
               <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
@@ -216,14 +196,14 @@
                   <TextBlock Grid.Column="3" Text="数据" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                 </Grid>
               </Border>
-              <ListView x:Name="Terminal" Grid.Row="1" SelectionMode="None" Background="{ThemeResource ControlAltFillColorQuarternaryBrush}"
+              <ListView x:Name="Terminal" Grid.Row="1" SelectionMode="Extended" AutomationProperties.Name="串口数据终端"
+                        Background="{ThemeResource ControlAltFillColorQuarternaryBrush}"
                         ScrollViewer.HorizontalScrollMode="Disabled" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                 <ListView.ItemContainerStyle>
                   <Style TargetType="ListViewItem">
                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                     <Setter Property="Padding" Value="16,7" />
                     <Setter Property="MinHeight" Value="30" />
-                    <Setter Property="IsTabStop" Value="False" />
                   </Style>
                 </ListView.ItemContainerStyle>
                 <ListView.ItemTemplate>
@@ -254,28 +234,24 @@
               </StackPanel>
             </Grid>
 
-            <Border Grid.Row="4" BorderThickness="0,1,0,0" BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}">
-              <StackPanel Padding="16" Spacing="10">
-                <Grid ColumnSpacing="12">
-                  <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                  </Grid.ColumnDefinitions>
-                  <TextBlock Text="发送数据" FontWeight="SemiBold" VerticalAlignment="Center" AutomationProperties.HeadingLevel="Level2" />
-                  <ComboBox x:Name="SendFormatPicker" Grid.Column="1" MinWidth="88" AutomationProperties.Name="发送编码" SelectionChanged="OnSelectionChanged" />
-                  <ComboBox x:Name="EndingPicker" Grid.Column="2" MinWidth="80" AutomationProperties.Name="行尾" SelectionChanged="OnSelectionChanged" />
-                </Grid>
-                <TextBox x:Name="InputBox" AcceptsReturn="True" TextWrapping="Wrap" Height="84" PlaceholderText="输入文本或设备指令…"
+            <Border Grid.Row="3" BorderThickness="0,1,0,0" BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}">
+              <StackPanel Padding="12" Spacing="8">
+                <TextBox x:Name="InputBox" AcceptsReturn="True" TextWrapping="Wrap" Height="80" PlaceholderText="输入文本或设备指令…"
                          AutomationProperties.Name="要发送的数据" FontFamily="Consolas" TextChanged="OnInputChanged" />
                 <Grid ColumnSpacing="12">
                   <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                   </Grid.ColumnDefinitions>
-                  <TextBlock x:Name="SendHint" Text="Ctrl+Enter 发送 · Enter 换行" FontSize="12" VerticalAlignment="Center"
+                  <ComboBox x:Name="SendFormatPicker" MinWidth="88" AutomationProperties.Name="发送编码"
+                            ToolTipService.ToolTip="发送编码" SelectionChanged="OnSelectionChanged" />
+                  <ComboBox x:Name="EndingPicker" Grid.Column="1" MinWidth="80" AutomationProperties.Name="行尾"
+                            ToolTipService.ToolTip="发送行尾" SelectionChanged="OnSelectionChanged" />
+                  <TextBlock x:Name="SendHint" Grid.Column="2" Text="Ctrl+Enter 发送 · Enter 换行" FontSize="12" VerticalAlignment="Center"
                              Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
-                  <Button x:Name="SendButton" Grid.Column="1" Content="发送 ↑" MinWidth="88" Style="{ThemeResource AccentButtonStyle}"
+                  <Button x:Name="SendButton" Grid.Column="3" Content="发送" MinWidth="72" Style="{ThemeResource AccentButtonStyle}"
                           Click="OnSend" ToolTipService.ToolTip="发送数据 (Ctrl+Enter)" />
                 </Grid>
               </StackPanel>
@@ -285,12 +261,12 @@
       </Border>
     </Grid>
 
-    <Grid Grid.Row="3" Padding="20,8" ColumnSpacing="20">
+    <Grid Grid.Row="3" Padding="12,8" ColumnSpacing="20">
       <Grid.ColumnDefinitions>
         <ColumnDefinition Width="*" />
         <ColumnDefinition Width="Auto" />
       </Grid.ColumnDefinitions>
-      <TextBlock x:Name="ConnectionStatus" Text="○ 未连接" FontSize="12" TextTrimming="CharacterEllipsis"
+      <TextBlock x:Name="ConnectionStatus" Text="未连接" FontSize="12" TextTrimming="CharacterEllipsis"
                  Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
       <TextBlock x:Name="ByteStatus" Grid.Column="1" Text="RX 0 B    TX 0 B" FontSize="12" FontFamily="Consolas"
                  Foreground="{ThemeResource TextFillColorSecondaryBrush}" />

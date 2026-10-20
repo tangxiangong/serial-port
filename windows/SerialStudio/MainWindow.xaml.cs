@@ -154,7 +154,7 @@ public sealed partial class MainWindow : Window
         if (ConnectButton.Icon is not SymbolIcon icon || icon.Symbol != connectionSymbol)
             ConnectButton.Icon = new SymbolIcon(connectionSymbol);
         SendButton.IsEnabled = status.connected && !sending && !busy && InputBox.Text.Length > 0;
-        SendButton.Content = sending ? "发送中…" : "发送 ↑";
+        SendButton.Content = sending ? "发送中…" : "发送";
         EndingPicker.IsEnabled = SendFormatPicker.SelectedIndex != 0;
         InputBox.PlaceholderText = SendFormatPicker.SelectedIndex == 0 ? "十六进制数据，例如 AA 01 FF" : "输入文本或设备指令…";
         SendHint.Text = SendFormatPicker.SelectedIndex == 0 ? "HEX 按原始字节发送，不追加行尾。" : "Ctrl+Enter 发送 · Enter 换行";
@@ -168,8 +168,8 @@ public sealed partial class MainWindow : Window
             ? $"{frames.Count} 条记录" : $"{visibleFrames.Count} / {frames.Count} 条记录";
         ClearButton.IsEnabled = frames.Count > 0;
         var selected = PortPicker.SelectedItem as PortChoice;
-        SessionSubtitle.Text = status.connected ? $"{status.path} · {preferences.BaudRate} baud" : selected?.DisplayName ?? "选择设备后即可开始";
-        ConnectionStatus.Text = status.connected ? $"● 已连接 · {status.path} · {preferences.BaudRate} baud" : "○ 未连接";
+        AppTitleBar.Subtitle = status.connected ? $"{status.path} · {preferences.BaudRate} baud" : selected?.DisplayName ?? "串口终端";
+        ConnectionStatus.Text = status.connected ? $"已连接 · {status.path} · {preferences.BaudRate} baud" : "未连接";
         ByteStatus.Text = $"RX {status.rx_bytes:N0} B    TX {status.tx_bytes:N0} B";
         PortCount.Text = PortPicker.Items.Count.ToString();
         DeviceEmptyState.Visibility = PortPicker.Items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
