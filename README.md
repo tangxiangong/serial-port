@@ -1,5 +1,12 @@
 # Serial Studio
 
+> **项目已迁移至 [ChipDock](https://github.com/tangxiangong/chipdock)。**
+>
+> 串口功能的后续开发、维护与发布将在 ChipDock 仓库进行。
+> 本仓库已归档，仅保留历史代码与文档，不再更新。请前往 ChipDock 获取后续版本、提交问题或参与开发。
+
+以下为归档前的项目文档。
+
 原生串口工具：macOS 使用 SwiftUI，Windows 使用 WinUI 3，共享 Rust 核心。
 工程结构、桥接与更新框架与 BibCiTeX / FlashDesk 对齐。
 
